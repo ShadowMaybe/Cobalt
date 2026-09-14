@@ -1,0 +1,3236 @@
+#include "attributes.h"
+#include "wrap/cobalt.h"
+#include "wrap/stub.h"
+#include "directstate.h"
+#include "framebuffers.h"
+#include "init.h"
+#include "line.h"
+#include "loader.h"
+#include "render.h"
+#include "texgen.h"
+#include "vertexattrib.h"
+#include "oldprogram.h"
+#include "samplers.h"
+#include "matrix.h"
+
+#include "../glx/hardext.h"
+
+//#define DEBUG
+#ifdef DEBUG
+#define DBG(a) a
+#else
+#define DBG(a)
+#endif
+
+#define STUB_FCT cobalt_Stub
+#include "gl_lookup.h"
+
+#if (!defined(_WIN32) || defined(_WIN64)) && !defined(__MINGW32__)
+void cobalt_Stub(void *x, ...) {
+    return;
+}
+#else
+//TODO: if need use STUB with different argnum, the macro must be redesigned
+void COBALT_API cobalt_Stub(void *x) {}
+#endif
+
+#define STUB_VERBOSE(func_name) void COBALT_API cobalt_Stub_##func_name(void *x) { static int first = 0; if(!first) { first=1; printf("stub called:" #func_name " \n" );}}
+#define ALL_FUNCTIONS \
+STUB_VERBOSE(glAccum)\
+STUB_VERBOSE(glAlphaFunc)\
+STUB_VERBOSE(glAreTexturesResident)\
+STUB_VERBOSE(glArrayElement)\
+STUB_VERBOSE(glBegin)\
+STUB_VERBOSE(glBitmap)\
+STUB_VERBOSE(glCallList)\
+STUB_VERBOSE(glCallLists)\
+STUB_VERBOSE(glClearAccum)\
+STUB_VERBOSE(glClearIndex)\
+STUB_VERBOSE(glClipPlane)\
+STUB_VERBOSE(glColor3b)\
+STUB_VERBOSE(glColor3s)\
+STUB_VERBOSE(glColor3i)\
+STUB_VERBOSE(glColor3f)\
+STUB_VERBOSE(glColor3d)\
+STUB_VERBOSE(glColor3ub)\
+STUB_VERBOSE(glColor3us)\
+STUB_VERBOSE(glColor3ui)\
+STUB_VERBOSE(glColor3bv)\
+STUB_VERBOSE(glColor3sv)\
+STUB_VERBOSE(glColor3iv)\
+STUB_VERBOSE(glColor3fv)\
+STUB_VERBOSE(glColor3dv)\
+STUB_VERBOSE(glColor3ubv)\
+STUB_VERBOSE(glColor3usv)\
+STUB_VERBOSE(glColor3uiv)\
+STUB_VERBOSE(glColor4b)\
+STUB_VERBOSE(glColor4s)\
+STUB_VERBOSE(glColor4i)\
+STUB_VERBOSE(glColor4f)\
+STUB_VERBOSE(glColor4d)\
+STUB_VERBOSE(glColor4ub)\
+STUB_VERBOSE(glColor4us)\
+STUB_VERBOSE(glColor4ui)\
+STUB_VERBOSE(glColor4bv)\
+STUB_VERBOSE(glColor4sv)\
+STUB_VERBOSE(glColor4iv)\
+STUB_VERBOSE(glColor4fv)\
+STUB_VERBOSE(glColor4dv)\
+STUB_VERBOSE(glColor4ubv)\
+STUB_VERBOSE(glColor4usv)\
+STUB_VERBOSE(glColor4uiv)\
+STUB_VERBOSE(glColorMaterial)\
+STUB_VERBOSE(glColorPointer)\
+STUB_VERBOSE(glCopyPixels)\
+STUB_VERBOSE(glDeleteLists)\
+STUB_VERBOSE(glDrawPixels)\
+STUB_VERBOSE(glEdgeFlag)\
+STUB_VERBOSE(glEdgeFlagv)\
+STUB_VERBOSE(glEdgeFlagPointer)\
+STUB_VERBOSE(glEnd)\
+STUB_VERBOSE(glEvalCoord1f)\
+STUB_VERBOSE(glEvalCoord1fv)\
+STUB_VERBOSE(glEvalCoord1d)\
+STUB_VERBOSE(glEvalCoord1dv)\
+STUB_VERBOSE(glEvalCoord2f)\
+STUB_VERBOSE(glEvalCoord2fv)\
+STUB_VERBOSE(glEvalCoord2d)\
+STUB_VERBOSE(glEvalCoord2dv)\
+STUB_VERBOSE(glEvalMesh1)\
+STUB_VERBOSE(glEvalMesh2)\
+STUB_VERBOSE(glEvalPoint1)\
+STUB_VERBOSE(glEvalPoint2)\
+STUB_VERBOSE(glFeedbackBuffer)\
+STUB_VERBOSE(glFogi)\
+STUB_VERBOSE(glFogiv)\
+STUB_VERBOSE(glFogf)\
+STUB_VERBOSE(glFogfv)\
+STUB_VERBOSE(glGenLists)\
+STUB_VERBOSE(glGetClipPlane)\
+STUB_VERBOSE(glGetLightiv)\
+STUB_VERBOSE(glGetLightfv)\
+STUB_VERBOSE(glGetMapiv)\
+STUB_VERBOSE(glGetMapfv)\
+STUB_VERBOSE(glGetMapdv)\
+STUB_VERBOSE(glGetMaterialiv)\
+STUB_VERBOSE(glGetMaterialfv)\
+STUB_VERBOSE(glGetPixelMapfv)\
+STUB_VERBOSE(glGetPixelMapusv)\
+STUB_VERBOSE(glGetPixelMapuiv)\
+STUB_VERBOSE(glGetPolygonStipple)\
+STUB_VERBOSE(glGetTexEnviv)\
+STUB_VERBOSE(glGetTexEnvfv)\
+STUB_VERBOSE(glGetTexGeniv)\
+STUB_VERBOSE(glGetTexGenfv)\
+STUB_VERBOSE(glGetTexGendv)\
+STUB_VERBOSE(glIndexi)\
+STUB_VERBOSE(glIndexub)\
+STUB_VERBOSE(glIndexs)\
+STUB_VERBOSE(glIndexf)\
+STUB_VERBOSE(glIndexd)\
+STUB_VERBOSE(glIndexiv)\
+STUB_VERBOSE(glIndexubv)\
+STUB_VERBOSE(glIndexsv)\
+STUB_VERBOSE(glIndexfv)\
+STUB_VERBOSE(glIndexdv)\
+STUB_VERBOSE(glIndexMask)\
+STUB_VERBOSE(glIndexPointer)\
+STUB_VERBOSE(glInitNames)\
+STUB_VERBOSE(glInterleavedArrays)\
+STUB_VERBOSE(glIsList)\
+STUB_VERBOSE(glLightModeli)\
+STUB_VERBOSE(glLightModelf)\
+STUB_VERBOSE(glLightModeliv)\
+STUB_VERBOSE(glLightModelfv)\
+STUB_VERBOSE(glLighti)\
+STUB_VERBOSE(glLightf)\
+STUB_VERBOSE(glLightiv)\
+STUB_VERBOSE(glLightfv)\
+STUB_VERBOSE(glLineStipple)\
+STUB_VERBOSE(glListBase)\
+STUB_VERBOSE(glLoadMatrixf)\
+STUB_VERBOSE(glLoadMatrixd)\
+STUB_VERBOSE(glLoadIdentity)\
+STUB_VERBOSE(glLoadName)\
+STUB_VERBOSE(glMap1f)\
+STUB_VERBOSE(glMap1d)\
+STUB_VERBOSE(glMap2f)\
+STUB_VERBOSE(glMap2d)\
+STUB_VERBOSE(glMapGrid1f)\
+STUB_VERBOSE(glMapGrid1d)\
+STUB_VERBOSE(glMapGrid2f)\
+STUB_VERBOSE(glMapGrid2d)\
+STUB_VERBOSE(glMateriali)\
+STUB_VERBOSE(glMaterialf)\
+STUB_VERBOSE(glMaterialiv)\
+STUB_VERBOSE(glMaterialfv)\
+STUB_VERBOSE(glMatrixMode)\
+STUB_VERBOSE(glMultMatrixf)\
+STUB_VERBOSE(glMultMatrixd)\
+STUB_VERBOSE(glFrustum)\
+STUB_VERBOSE(glNewList)\
+STUB_VERBOSE(glEndList)\
+STUB_VERBOSE(glNormal3f)\
+STUB_VERBOSE(glNormal3b)\
+STUB_VERBOSE(glNormal3s)\
+STUB_VERBOSE(glNormal3i)\
+STUB_VERBOSE(glNormal3d)\
+STUB_VERBOSE(glNormal3fv)\
+STUB_VERBOSE(glNormal3bv)\
+STUB_VERBOSE(glNormal3sv)\
+STUB_VERBOSE(glNormal3iv)\
+STUB_VERBOSE(glNormal3dv)\
+STUB_VERBOSE(glNormalPointer)\
+STUB_VERBOSE(glOrtho)\
+STUB_VERBOSE(glPassThrough)\
+STUB_VERBOSE(glPixelMapfv)\
+STUB_VERBOSE(glPixelMapusv)\
+STUB_VERBOSE(glPixelMapuiv)\
+STUB_VERBOSE(glPixelTransferi)\
+STUB_VERBOSE(glPixelTransferf)\
+STUB_VERBOSE(glPixelZoom)\
+STUB_VERBOSE(glPolygonStipple)\
+STUB_VERBOSE(glPushAttrib)\
+STUB_VERBOSE(glPushClientAttrib)\
+STUB_VERBOSE(glPopAttrib)\
+STUB_VERBOSE(glPopClientAttrib)\
+STUB_VERBOSE(glPopMatrix)\
+STUB_VERBOSE(glPopName)\
+STUB_VERBOSE(glPrioritizeTextures)\
+STUB_VERBOSE(glPushMatrix)\
+STUB_VERBOSE(glPushName)\
+STUB_VERBOSE(glRasterPos2i)\
+STUB_VERBOSE(glRasterPos2s)\
+STUB_VERBOSE(glRasterPos2f)\
+STUB_VERBOSE(glRasterPos2d)\
+STUB_VERBOSE(glRasterPos2iv)\
+STUB_VERBOSE(glRasterPos2sv)\
+STUB_VERBOSE(glRasterPos2fv)\
+STUB_VERBOSE(glRasterPos2dv)\
+STUB_VERBOSE(glRasterPos3i)\
+STUB_VERBOSE(glRasterPos3s)\
+STUB_VERBOSE(glRasterPos3f)\
+STUB_VERBOSE(glRasterPos3d)\
+STUB_VERBOSE(glRasterPos3iv)\
+STUB_VERBOSE(glRasterPos3sv)\
+STUB_VERBOSE(glRasterPos3fv)\
+STUB_VERBOSE(glRasterPos3dv)\
+STUB_VERBOSE(glRasterPos4i)\
+STUB_VERBOSE(glRasterPos4s)\
+STUB_VERBOSE(glRasterPos4f)\
+STUB_VERBOSE(glRasterPos4d)\
+STUB_VERBOSE(glRasterPos4iv)\
+STUB_VERBOSE(glRasterPos4sv)\
+STUB_VERBOSE(glRasterPos4fv)\
+STUB_VERBOSE(glRasterPos4dv)\
+STUB_VERBOSE(glRecti)\
+STUB_VERBOSE(glRects)\
+STUB_VERBOSE(glRectf)\
+STUB_VERBOSE(glRectd)\
+STUB_VERBOSE(glRectiv)\
+STUB_VERBOSE(glRectsv)\
+STUB_VERBOSE(glRectfv)\
+STUB_VERBOSE(glRectdv)\
+STUB_VERBOSE(glRenderMode)\
+STUB_VERBOSE(glRotatef)\
+STUB_VERBOSE(glRotated)\
+STUB_VERBOSE(glScalef)\
+STUB_VERBOSE(glScaled)\
+STUB_VERBOSE(glSelectBuffer)\
+STUB_VERBOSE(glShadeModel)\
+STUB_VERBOSE(glTexCoord1f)\
+STUB_VERBOSE(glTexCoord1s)\
+STUB_VERBOSE(glTexCoord1i)\
+STUB_VERBOSE(glTexCoord1d)\
+STUB_VERBOSE(glTexCoord1fv)\
+STUB_VERBOSE(glTexCoord1sv)\
+STUB_VERBOSE(glTexCoord1iv)\
+STUB_VERBOSE(glTexCoord1dv)\
+STUB_VERBOSE(glTexCoord2f)\
+STUB_VERBOSE(glTexCoord2s)\
+STUB_VERBOSE(glTexCoord2i)\
+STUB_VERBOSE(glTexCoord2d)\
+STUB_VERBOSE(glTexCoord2fv)\
+STUB_VERBOSE(glTexCoord2sv)\
+STUB_VERBOSE(glTexCoord2iv)\
+STUB_VERBOSE(glTexCoord2dv)\
+STUB_VERBOSE(glTexCoord3f)\
+STUB_VERBOSE(glTexCoord3s)\
+STUB_VERBOSE(glTexCoord3i)\
+STUB_VERBOSE(glTexCoord3d)\
+STUB_VERBOSE(glTexCoord3fv)\
+STUB_VERBOSE(glTexCoord3sv)\
+STUB_VERBOSE(glTexCoord3iv)\
+STUB_VERBOSE(glTexCoord3dv)\
+STUB_VERBOSE(glTexCoord4f)\
+STUB_VERBOSE(glTexCoord4s)\
+STUB_VERBOSE(glTexCoord4i)\
+STUB_VERBOSE(glTexCoord4d)\
+STUB_VERBOSE(glTexCoord4fv)\
+STUB_VERBOSE(glTexCoord4sv)\
+STUB_VERBOSE(glTexCoord4iv)\
+STUB_VERBOSE(glTexCoord4dv)\
+STUB_VERBOSE(glTexCoordPointer)\
+STUB_VERBOSE(glTexEnvi)\
+STUB_VERBOSE(glTexEnviv)\
+STUB_VERBOSE(glTexEnvf)\
+STUB_VERBOSE(glTexEnvfv)\
+STUB_VERBOSE(glTexGeni)\
+STUB_VERBOSE(glTexGeniv)\
+STUB_VERBOSE(glTexGenf)\
+STUB_VERBOSE(glTexGenfv)\
+STUB_VERBOSE(glTexGend)\
+STUB_VERBOSE(glTexGendv)\
+STUB_VERBOSE(glTranslatef)\
+STUB_VERBOSE(glTranslated)\
+STUB_VERBOSE(glVertex2f)\
+STUB_VERBOSE(glVertex2s)\
+STUB_VERBOSE(glVertex2i)\
+STUB_VERBOSE(glVertex2d)\
+STUB_VERBOSE(glVertex2fv)\
+STUB_VERBOSE(glVertex2sv)\
+STUB_VERBOSE(glVertex2iv)\
+STUB_VERBOSE(glVertex2dv)\
+STUB_VERBOSE(glVertex3f)\
+STUB_VERBOSE(glVertex3s)\
+STUB_VERBOSE(glVertex3i)\
+STUB_VERBOSE(glVertex3d)\
+STUB_VERBOSE(glVertex3fv)\
+STUB_VERBOSE(glVertex3sv)\
+STUB_VERBOSE(glVertex3iv)\
+STUB_VERBOSE(glVertex3dv)\
+STUB_VERBOSE(glVertex4f)\
+STUB_VERBOSE(glVertex4s)\
+STUB_VERBOSE(glVertex4i)\
+STUB_VERBOSE(glVertex4d)\
+STUB_VERBOSE(glVertex4fv)\
+STUB_VERBOSE(glVertex4sv)\
+STUB_VERBOSE(glVertex4iv)\
+STUB_VERBOSE(glVertex4dv)\
+STUB_VERBOSE(glVertexPointer)\
+STUB_VERBOSE(glEnable)\
+STUB_VERBOSE(glDisable)\
+STUB_VERBOSE(glBindTexture)\
+STUB_VERBOSE(glBlendFunc)\
+STUB_VERBOSE(glClear)\
+STUB_VERBOSE(glClearColor)\
+STUB_VERBOSE(glClearDepth)\
+STUB_VERBOSE(glClearStencil)\
+STUB_VERBOSE(glColorMask)\
+STUB_VERBOSE(glCullFace)\
+STUB_VERBOSE(glDepthFunc)\
+STUB_VERBOSE(glDepthMask)\
+STUB_VERBOSE(glDepthRange)\
+STUB_VERBOSE(glDisableClientState)\
+STUB_VERBOSE(glDrawArrays)\
+STUB_VERBOSE(glDrawBuffer)\
+STUB_VERBOSE(glDrawElements)\
+STUB_VERBOSE(glEnableClientState)\
+STUB_VERBOSE(glFinish)\
+STUB_VERBOSE(glFlush)\
+STUB_VERBOSE(glFrontFace)\
+STUB_VERBOSE(glGenTextures)\
+STUB_VERBOSE(glDeleteTextures)\
+STUB_VERBOSE(glGetBooleanv)\
+STUB_VERBOSE(glGetFloatv)\
+STUB_VERBOSE(glGetIntegerv)\
+STUB_VERBOSE(glGetDoublev)\
+STUB_VERBOSE(glGetError)\
+STUB_VERBOSE(glGetPointerv)\
+STUB_VERBOSE(glGetString)\
+STUB_VERBOSE(glGetTexImage)\
+STUB_VERBOSE(glGetTexLevelParameteriv)\
+STUB_VERBOSE(glGetTexLevelParameterfv)\
+STUB_VERBOSE(glGetTexParameteriv)\
+STUB_VERBOSE(glGetTexParameterfv)\
+STUB_VERBOSE(glHint)\
+STUB_VERBOSE(glIsEnabled)\
+STUB_VERBOSE(glIsTexture)\
+STUB_VERBOSE(glLineWidth)\
+STUB_VERBOSE(glLogicOp)\
+STUB_VERBOSE(glPixelStorei)\
+STUB_VERBOSE(glPixelStoref)\
+STUB_VERBOSE(glPointSize)\
+STUB_VERBOSE(glPolygonMode)\
+STUB_VERBOSE(glPolygonOffset)\
+STUB_VERBOSE(glReadBuffer)\
+STUB_VERBOSE(glReadPixels)\
+STUB_VERBOSE(glScissor)\
+STUB_VERBOSE(glStencilFunc)\
+STUB_VERBOSE(glStencilMask)\
+STUB_VERBOSE(glStencilOp)\
+STUB_VERBOSE(glTexImage1D)\
+STUB_VERBOSE(glTexImage2D)\
+STUB_VERBOSE(glCopyTexImage1D)\
+STUB_VERBOSE(glCopyTexImage2D)\
+STUB_VERBOSE(glCopyTexSubImage1D)\
+STUB_VERBOSE(glCopyTexSubImage2D)\
+STUB_VERBOSE(glTexParameteri)\
+STUB_VERBOSE(glTexParameteriv)\
+STUB_VERBOSE(glTexParameterf)\
+STUB_VERBOSE(glTexParameterfv)\
+STUB_VERBOSE(glTexSubImage1D)\
+STUB_VERBOSE(glTexSubImage2D)\
+STUB_VERBOSE(glViewport)\
+STUB_VERBOSE(glTexImage3D)\
+STUB_VERBOSE(glTexSubImage3D)\
+STUB_VERBOSE(glCopyTexSubImage3D)\
+STUB_VERBOSE(glDrawRangeElements)\
+STUB_VERBOSE(glClientActiveTexture)\
+STUB_VERBOSE(glMultiTexCoord1f)\
+STUB_VERBOSE(glMultiTexCoord1s)\
+STUB_VERBOSE(glMultiTexCoord1i)\
+STUB_VERBOSE(glMultiTexCoord1d)\
+STUB_VERBOSE(glMultiTexCoord1fv)\
+STUB_VERBOSE(glMultiTexCoord1sv)\
+STUB_VERBOSE(glMultiTexCoord1iv)\
+STUB_VERBOSE(glMultiTexCoord1dv)\
+STUB_VERBOSE(glMultiTexCoord2f)\
+STUB_VERBOSE(glMultiTexCoord2s)\
+STUB_VERBOSE(glMultiTexCoord2i)\
+STUB_VERBOSE(glMultiTexCoord2d)\
+STUB_VERBOSE(glMultiTexCoord2fv)\
+STUB_VERBOSE(glMultiTexCoord2sv)\
+STUB_VERBOSE(glMultiTexCoord2iv)\
+STUB_VERBOSE(glMultiTexCoord2dv)\
+STUB_VERBOSE(glMultiTexCoord3f)\
+STUB_VERBOSE(glMultiTexCoord3s)\
+STUB_VERBOSE(glMultiTexCoord3i)\
+STUB_VERBOSE(glMultiTexCoord3d)\
+STUB_VERBOSE(glMultiTexCoord3fv)\
+STUB_VERBOSE(glMultiTexCoord3sv)\
+STUB_VERBOSE(glMultiTexCoord3iv)\
+STUB_VERBOSE(glMultiTexCoord3dv)\
+STUB_VERBOSE(glMultiTexCoord4f)\
+STUB_VERBOSE(glMultiTexCoord4s)\
+STUB_VERBOSE(glMultiTexCoord4i)\
+STUB_VERBOSE(glMultiTexCoord4d)\
+STUB_VERBOSE(glMultiTexCoord4fv)\
+STUB_VERBOSE(glMultiTexCoord4sv)\
+STUB_VERBOSE(glMultiTexCoord4iv)\
+STUB_VERBOSE(glMultiTexCoord4dv)\
+STUB_VERBOSE(glLoadTransposeMatrixf)\
+STUB_VERBOSE(glLoadTransposeMatrixd)\
+STUB_VERBOSE(glMultTransposeMatrixf)\
+STUB_VERBOSE(glMultTransposeMatrixd)\
+STUB_VERBOSE(glCompressedTexImage3D)\
+STUB_VERBOSE(glCompressedTexImage2D)\
+STUB_VERBOSE(glCompressedTexImage1D)\
+STUB_VERBOSE(glCompressedTexSubImage3D)\
+STUB_VERBOSE(glCompressedTexSubImage2D)\
+STUB_VERBOSE(glCompressedTexSubImage1D)\
+STUB_VERBOSE(glGetCompressedTexImage)\
+STUB_VERBOSE(glSampleCoverage)\
+STUB_VERBOSE(glActiveTexture)\
+STUB_VERBOSE(glFogCoordf)\
+STUB_VERBOSE(glFogCoordd)\
+STUB_VERBOSE(glFogCoordfv)\
+STUB_VERBOSE(glFogCoorddv)\
+STUB_VERBOSE(glFogCoordPointer)\
+STUB_VERBOSE(glSecondaryColor3b)\
+STUB_VERBOSE(glSecondaryColor3s)\
+STUB_VERBOSE(glSecondaryColor3i)\
+STUB_VERBOSE(glSecondaryColor3f)\
+STUB_VERBOSE(glSecondaryColor3d)\
+STUB_VERBOSE(glSecondaryColor3ub)\
+STUB_VERBOSE(glSecondaryColor3us)\
+STUB_VERBOSE(glSecondaryColor3ui)\
+STUB_VERBOSE(glSecondaryColor3bv)\
+STUB_VERBOSE(glSecondaryColor3sv)\
+STUB_VERBOSE(glSecondaryColor3iv)\
+STUB_VERBOSE(glSecondaryColor3fv)\
+STUB_VERBOSE(glSecondaryColor3dv)\
+STUB_VERBOSE(glSecondaryColor3ubv)\
+STUB_VERBOSE(glSecondaryColor3usv)\
+STUB_VERBOSE(glSecondaryColor3uiv)\
+STUB_VERBOSE(glSecondaryColorPointer)\
+STUB_VERBOSE(glWindowPos2i)\
+STUB_VERBOSE(glWindowPos2s)\
+STUB_VERBOSE(glWindowPos2f)\
+STUB_VERBOSE(glWindowPos2d)\
+STUB_VERBOSE(glWindowPos2iv)\
+STUB_VERBOSE(glWindowPos2sv)\
+STUB_VERBOSE(glWindowPos2fv)\
+STUB_VERBOSE(glWindowPos2dv)\
+STUB_VERBOSE(glWindowPos3i)\
+STUB_VERBOSE(glWindowPos3s)\
+STUB_VERBOSE(glWindowPos3f)\
+STUB_VERBOSE(glWindowPos3d)\
+STUB_VERBOSE(glWindowPos3iv)\
+STUB_VERBOSE(glWindowPos3sv)\
+STUB_VERBOSE(glWindowPos3fv)\
+STUB_VERBOSE(glWindowPos3dv)\
+STUB_VERBOSE(glBlendColor)\
+STUB_VERBOSE(glBlendEquation)\
+STUB_VERBOSE(glMultiDrawArrays)\
+STUB_VERBOSE(glMultiDrawElements)\
+STUB_VERBOSE(glPointParameterf)\
+STUB_VERBOSE(glPointParameteri)\
+STUB_VERBOSE(glPointParameterfv)\
+STUB_VERBOSE(glPointParameteriv)\
+STUB_VERBOSE(glBlendFuncSeparate)\
+STUB_VERBOSE(glBindBuffer)\
+STUB_VERBOSE(glDeleteBuffers)\
+STUB_VERBOSE(glGenBuffers)\
+STUB_VERBOSE(glIsBuffer)\
+STUB_VERBOSE(glBufferData)\
+STUB_VERBOSE(glBufferSubData)\
+STUB_VERBOSE(glGetBufferSubData)\
+STUB_VERBOSE(glMapBuffer)\
+STUB_VERBOSE(glUnmapBuffer)\
+STUB_VERBOSE(glGetBufferParameteriv)\
+STUB_VERBOSE(glGetBufferPointerv)\
+STUB_VERBOSE(glGenQueries)\
+STUB_VERBOSE(glDeleteQueries)\
+STUB_VERBOSE(glIsQuery)\
+STUB_VERBOSE(glBeginQuery)\
+STUB_VERBOSE(glEndQuery)\
+STUB_VERBOSE(glGetQueryiv)\
+STUB_VERBOSE(glGetQueryObjectiv)\
+STUB_VERBOSE(glGetQueryObjectuiv)\
+STUB_VERBOSE(glCreateProgram)\
+STUB_VERBOSE(glDeleteProgram)\
+STUB_VERBOSE(glIsProgram)\
+STUB_VERBOSE(glCreateShader)\
+STUB_VERBOSE(glDeleteShader)\
+STUB_VERBOSE(glIsShader)\
+STUB_VERBOSE(glAttachShader)\
+STUB_VERBOSE(glDetachShader)\
+STUB_VERBOSE(glShaderSource)\
+STUB_VERBOSE(glCompileShader)\
+STUB_VERBOSE(glLinkProgram)\
+STUB_VERBOSE(glUseProgram)\
+STUB_VERBOSE(glValidateProgram)\
+STUB_VERBOSE(glUniform1f)\
+STUB_VERBOSE(glUniform2f)\
+STUB_VERBOSE(glUniform3f)\
+STUB_VERBOSE(glUniform4f)\
+STUB_VERBOSE(glUniform1i)\
+STUB_VERBOSE(glUniform2i)\
+STUB_VERBOSE(glUniform3i)\
+STUB_VERBOSE(glUniform4i)\
+STUB_VERBOSE(glUniform1fv)\
+STUB_VERBOSE(glUniform2fv)\
+STUB_VERBOSE(glUniform3fv)\
+STUB_VERBOSE(glUniform4fv)\
+STUB_VERBOSE(glUniform1iv)\
+STUB_VERBOSE(glUniform2iv)\
+STUB_VERBOSE(glUniform3iv)\
+STUB_VERBOSE(glUniform4iv)\
+STUB_VERBOSE(glUniformMatrix2fv)\
+STUB_VERBOSE(glUniformMatrix3fv)\
+STUB_VERBOSE(glUniformMatrix4fv)\
+STUB_VERBOSE(glGetShaderiv)\
+STUB_VERBOSE(glGetProgramiv)\
+STUB_VERBOSE(glGetShaderInfoLog)\
+STUB_VERBOSE(glGetProgramInfoLog)\
+STUB_VERBOSE(glGetAttachedShaders)\
+STUB_VERBOSE(glGetUniformLocation)\
+STUB_VERBOSE(glGetActiveUniform)\
+STUB_VERBOSE(glGetUniformfv)\
+STUB_VERBOSE(glGetUniformiv)\
+STUB_VERBOSE(glGetShaderSource)\
+STUB_VERBOSE(glVertexAttrib1f)\
+STUB_VERBOSE(glVertexAttrib1s)\
+STUB_VERBOSE(glVertexAttrib1d)\
+STUB_VERBOSE(glVertexAttrib2f)\
+STUB_VERBOSE(glVertexAttrib2s)\
+STUB_VERBOSE(glVertexAttrib2d)\
+STUB_VERBOSE(glVertexAttrib3f)\
+STUB_VERBOSE(glVertexAttrib3s)\
+STUB_VERBOSE(glVertexAttrib3d)\
+STUB_VERBOSE(glVertexAttrib4f)\
+STUB_VERBOSE(glVertexAttrib4s)\
+STUB_VERBOSE(glVertexAttrib4d)\
+STUB_VERBOSE(glVertexAttrib4Nub)\
+STUB_VERBOSE(glVertexAttrib1fv)\
+STUB_VERBOSE(glVertexAttrib1sv)\
+STUB_VERBOSE(glVertexAttrib1dv)\
+STUB_VERBOSE(glVertexAttrib2fv)\
+STUB_VERBOSE(glVertexAttrib2sv)\
+STUB_VERBOSE(glVertexAttrib2dv)\
+STUB_VERBOSE(glVertexAttrib3fv)\
+STUB_VERBOSE(glVertexAttrib3sv)\
+STUB_VERBOSE(glVertexAttrib3dv)\
+STUB_VERBOSE(glVertexAttrib4fv)\
+STUB_VERBOSE(glVertexAttrib4sv)\
+STUB_VERBOSE(glVertexAttrib4dv)\
+STUB_VERBOSE(glVertexAttrib4iv)\
+STUB_VERBOSE(glVertexAttrib4bv)\
+STUB_VERBOSE(glVertexAttrib4ubv)\
+STUB_VERBOSE(glVertexAttrib4usv)\
+STUB_VERBOSE(glVertexAttrib4uiv)\
+STUB_VERBOSE(glVertexAttrib4Nbv)\
+STUB_VERBOSE(glVertexAttrib4Nsv)\
+STUB_VERBOSE(glVertexAttrib4Niv)\
+STUB_VERBOSE(glVertexAttrib4Nubv)\
+STUB_VERBOSE(glVertexAttrib4Nusv)\
+STUB_VERBOSE(glVertexAttrib4Nuiv)\
+STUB_VERBOSE(glVertexAttribPointer)\
+STUB_VERBOSE(glEnableVertexAttribArray)\
+STUB_VERBOSE(glDisableVertexAttribArray)\
+STUB_VERBOSE(glBindAttribLocation)\
+STUB_VERBOSE(glGetActiveAttrib)\
+STUB_VERBOSE(glGetAttribLocation)\
+STUB_VERBOSE(glGetVertexAttribiv)\
+STUB_VERBOSE(glGetVertexAttribfv)\
+STUB_VERBOSE(glGetVertexAttribdv)\
+STUB_VERBOSE(glGetVertexAttribPointerv)\
+STUB_VERBOSE(glDrawBuffers)\
+STUB_VERBOSE(glBlendEquationSeparate)\
+STUB_VERBOSE(glStencilOpSeparate)\
+STUB_VERBOSE(glStencilFuncSeparate)\
+STUB_VERBOSE(glStencilMaskSeparate)\
+STUB_VERBOSE(glUniformMatrix2x3fv)\
+STUB_VERBOSE(glUniformMatrix3x2fv)\
+STUB_VERBOSE(glUniformMatrix2x4fv)\
+STUB_VERBOSE(glUniformMatrix4x2fv)\
+STUB_VERBOSE(glUniformMatrix3x4fv)\
+STUB_VERBOSE(glUniformMatrix4x3fv)\
+STUB_VERBOSE(glGetStringi)\
+STUB_VERBOSE(glClearBufferiv)\
+STUB_VERBOSE(glClearBufferuiv)\
+STUB_VERBOSE(glClearBufferfv)\
+STUB_VERBOSE(glClearBufferfi)\
+STUB_VERBOSE(glVertexAttribI1i)\
+STUB_VERBOSE(glVertexAttribI2i)\
+STUB_VERBOSE(glVertexAttribI3i)\
+STUB_VERBOSE(glVertexAttribI4i)\
+STUB_VERBOSE(glVertexAttribI1ui)\
+STUB_VERBOSE(glVertexAttribI2ui)\
+STUB_VERBOSE(glVertexAttribI3ui)\
+STUB_VERBOSE(glVertexAttribI4ui)\
+STUB_VERBOSE(glVertexAttribI1iv)\
+STUB_VERBOSE(glVertexAttribI2iv)\
+STUB_VERBOSE(glVertexAttribI3iv)\
+STUB_VERBOSE(glVertexAttribI4iv)\
+STUB_VERBOSE(glVertexAttribI1uiv)\
+STUB_VERBOSE(glVertexAttribI2uiv)\
+STUB_VERBOSE(glVertexAttribI3uiv)\
+STUB_VERBOSE(glVertexAttribI4uiv)\
+STUB_VERBOSE(glVertexAttribI4bv)\
+STUB_VERBOSE(glVertexAttribI4sv)\
+STUB_VERBOSE(glVertexAttribI4ubv)\
+STUB_VERBOSE(glVertexAttribI4usv)\
+STUB_VERBOSE(glVertexAttribIPointer)\
+STUB_VERBOSE(glGetVertexAttribIiv)\
+STUB_VERBOSE(glGetVertexAttribIuiv)\
+STUB_VERBOSE(glUniform1ui)\
+STUB_VERBOSE(glUniform2ui)\
+STUB_VERBOSE(glUniform3ui)\
+STUB_VERBOSE(glUniform4ui)\
+STUB_VERBOSE(glUniform1uiv)\
+STUB_VERBOSE(glUniform2uiv)\
+STUB_VERBOSE(glUniform3uiv)\
+STUB_VERBOSE(glUniform4uiv)\
+STUB_VERBOSE(glGetUniformuiv)\
+STUB_VERBOSE(glBindFragDataLocation)\
+STUB_VERBOSE(glGetFragDataLocation)\
+STUB_VERBOSE(glBeginConditionalRender)\
+STUB_VERBOSE(glEndConditionalRender)\
+STUB_VERBOSE(glMapBufferRange)\
+STUB_VERBOSE(glFlushMappedBufferRange)\
+STUB_VERBOSE(glClampColor)\
+STUB_VERBOSE(glIsRenderbuffer)\
+STUB_VERBOSE(glBindRenderbuffer)\
+STUB_VERBOSE(glDeleteRenderbuffers)\
+STUB_VERBOSE(glGenRenderbuffers)\
+STUB_VERBOSE(glRenderbufferStorage)\
+STUB_VERBOSE(glRenderbufferStorageMultisample)\
+STUB_VERBOSE(glGetRenderbufferParameteriv)\
+STUB_VERBOSE(glIsFramebuffer)\
+STUB_VERBOSE(glBindFramebuffer)\
+STUB_VERBOSE(glDeleteFramebuffers)\
+STUB_VERBOSE(glGenFramebuffers)\
+STUB_VERBOSE(glCheckFramebufferStatus)\
+STUB_VERBOSE(glFramebufferTexture1D)\
+STUB_VERBOSE(glFramebufferTexture2D)\
+STUB_VERBOSE(glFramebufferTexture3D)\
+STUB_VERBOSE(glFramebufferTextureLayer)\
+STUB_VERBOSE(glFramebufferRenderbuffer)\
+STUB_VERBOSE(glGetFramebufferAttachmentParameteriv)\
+STUB_VERBOSE(glBlitFramebuffer)\
+STUB_VERBOSE(glGenerateMipmap)\
+STUB_VERBOSE(glTexParameterIiv)\
+STUB_VERBOSE(glTexParameterIuiv)\
+STUB_VERBOSE(glGetTexParameterIiv)\
+STUB_VERBOSE(glGetTexParameterIuiv)\
+STUB_VERBOSE(glColorMaski)\
+STUB_VERBOSE(glGetBooleani_v)\
+STUB_VERBOSE(glGetIntegeri_v)\
+STUB_VERBOSE(glEnablei)\
+STUB_VERBOSE(glDisablei)\
+STUB_VERBOSE(glIsEnabledi)\
+STUB_VERBOSE(glBindBufferRange)\
+STUB_VERBOSE(glBindBufferBase)\
+STUB_VERBOSE(glBeginTransformFeedback)\
+STUB_VERBOSE(glEndTransformFeedback)\
+STUB_VERBOSE(glTransformFeedbackVaryings)\
+STUB_VERBOSE(glGetTransformFeedbackVarying)\
+STUB_VERBOSE(glBindVertexArray)\
+STUB_VERBOSE(glDeleteVertexArrays)\
+STUB_VERBOSE(glGenVertexArrays)\
+STUB_VERBOSE(glIsVertexArray)\
+STUB_VERBOSE(glDrawArraysInstanced)\
+STUB_VERBOSE(glDrawElementsInstanced)\
+STUB_VERBOSE(glCopyBufferSubData)\
+STUB_VERBOSE(glPrimitiveRestartIndex)\
+STUB_VERBOSE(glTexBuffer)\
+STUB_VERBOSE(glGetUniformIndices)\
+STUB_VERBOSE(glGetActiveUniformsiv)\
+STUB_VERBOSE(glGetActiveUniformName)\
+STUB_VERBOSE(glGetUniformBlockIndex)\
+STUB_VERBOSE(glGetActiveUniformBlockiv)\
+STUB_VERBOSE(glGetActiveUniformBlockName)\
+STUB_VERBOSE(glUniformBlockBinding)\
+STUB_VERBOSE(glGetBufferParameteri64v)\
+STUB_VERBOSE(glDrawElementsBaseVertex)\
+STUB_VERBOSE(glDrawRangeElementsBaseVertex)\
+STUB_VERBOSE(glDrawElementsInstancedBaseVertex)\
+STUB_VERBOSE(glMultiDrawElementsBaseVertex)\
+STUB_VERBOSE(glProvokingVertex)\
+STUB_VERBOSE(glTexImage2DMultisample)\
+STUB_VERBOSE(glTexImage3DMultisample)\
+STUB_VERBOSE(glGetMultisamplefv)\
+STUB_VERBOSE(glSampleMaski)\
+STUB_VERBOSE(glFramebufferTexture)\
+STUB_VERBOSE(glFenceSync)\
+STUB_VERBOSE(glIsSync)\
+STUB_VERBOSE(glDeleteSync)\
+STUB_VERBOSE(glClientWaitSync)\
+STUB_VERBOSE(glWaitSync)\
+STUB_VERBOSE(glGetInteger64v)\
+STUB_VERBOSE(glGetInteger64i_v)\
+STUB_VERBOSE(glGetSynciv)\
+STUB_VERBOSE(glVertexP2ui)\
+STUB_VERBOSE(glVertexP3ui)\
+STUB_VERBOSE(glVertexP4ui)\
+STUB_VERBOSE(glVertexP2uiv)\
+STUB_VERBOSE(glVertexP3uiv)\
+STUB_VERBOSE(glVertexP4uiv)\
+STUB_VERBOSE(glTexCoordP1ui)\
+STUB_VERBOSE(glTexCoordP2ui)\
+STUB_VERBOSE(glTexCoordP3ui)\
+STUB_VERBOSE(glTexCoordP4ui)\
+STUB_VERBOSE(glTexCoordP1uiv)\
+STUB_VERBOSE(glTexCoordP2uiv)\
+STUB_VERBOSE(glTexCoordP3uiv)\
+STUB_VERBOSE(glTexCoordP4uiv)\
+STUB_VERBOSE(glMultiTexCoordP1ui)\
+STUB_VERBOSE(glMultiTexCoordP2ui)\
+STUB_VERBOSE(glMultiTexCoordP3ui)\
+STUB_VERBOSE(glMultiTexCoordP4ui)\
+STUB_VERBOSE(glMultiTexCoordP1uiv)\
+STUB_VERBOSE(glMultiTexCoordP2uiv)\
+STUB_VERBOSE(glMultiTexCoordP3uiv)\
+STUB_VERBOSE(glMultiTexCoordP4uiv)\
+STUB_VERBOSE(glNormalP3ui)\
+STUB_VERBOSE(glNormalP3uiv)\
+STUB_VERBOSE(glColorP3ui)\
+STUB_VERBOSE(glColorP4ui)\
+STUB_VERBOSE(glColorP3uiv)\
+STUB_VERBOSE(glColorP4uiv)\
+STUB_VERBOSE(glSecondaryColorP3ui)\
+STUB_VERBOSE(glSecondaryColorP3uiv)\
+STUB_VERBOSE(glBindFragDataLocationIndexed)\
+STUB_VERBOSE(glGetFragDataIndex)\
+STUB_VERBOSE(glGenSamplers)\
+STUB_VERBOSE(glDeleteSamplers)\
+STUB_VERBOSE(glIsSampler)\
+STUB_VERBOSE(glBindSampler)\
+STUB_VERBOSE(glSamplerParameteri)\
+STUB_VERBOSE(glSamplerParameterf)\
+STUB_VERBOSE(glSamplerParameteriv)\
+STUB_VERBOSE(glSamplerParameterfv)\
+STUB_VERBOSE(glSamplerParameterIiv)\
+STUB_VERBOSE(glSamplerParameterIuiv)\
+STUB_VERBOSE(glGetSamplerParameteriv)\
+STUB_VERBOSE(glGetSamplerParameterfv)\
+STUB_VERBOSE(glGetSamplerParameterIiv)\
+STUB_VERBOSE(glGetSamplerParameterIuiv)\
+STUB_VERBOSE(glQueryCounter)\
+STUB_VERBOSE(glGetQueryObjecti64v)\
+STUB_VERBOSE(glGetQueryObjectui64v)\
+STUB_VERBOSE(glVertexAttribDivisor)\
+STUB_VERBOSE(glVertexAttribP1ui)\
+STUB_VERBOSE(glVertexAttribP2ui)\
+STUB_VERBOSE(glVertexAttribP3ui)\
+STUB_VERBOSE(glVertexAttribP4ui)\
+STUB_VERBOSE(glVertexAttribP1uiv)\
+STUB_VERBOSE(glVertexAttribP2uiv)\
+STUB_VERBOSE(glVertexAttribP3uiv)\
+STUB_VERBOSE(glVertexAttribP4uiv)\
+STUB_VERBOSE(glBlendEquationi)\
+STUB_VERBOSE(glBlendEquationSeparatei)\
+STUB_VERBOSE(glBlendFunci)\
+STUB_VERBOSE(glBlendFuncSeparatei)\
+STUB_VERBOSE(glDrawArraysIndirect)\
+STUB_VERBOSE(glDrawElementsIndirect)\
+STUB_VERBOSE(glUniform1d)\
+STUB_VERBOSE(glUniform2d)\
+STUB_VERBOSE(glUniform3d)\
+STUB_VERBOSE(glUniform4d)\
+STUB_VERBOSE(glUniform1dv)\
+STUB_VERBOSE(glUniform2dv)\
+STUB_VERBOSE(glUniform3dv)\
+STUB_VERBOSE(glUniform4dv)\
+STUB_VERBOSE(glUniformMatrix2dv)\
+STUB_VERBOSE(glUniformMatrix3dv)\
+STUB_VERBOSE(glUniformMatrix4dv)\
+STUB_VERBOSE(glUniformMatrix2x3dv)\
+STUB_VERBOSE(glUniformMatrix2x4dv)\
+STUB_VERBOSE(glUniformMatrix3x2dv)\
+STUB_VERBOSE(glUniformMatrix3x4dv)\
+STUB_VERBOSE(glUniformMatrix4x2dv)\
+STUB_VERBOSE(glUniformMatrix4x3dv)\
+STUB_VERBOSE(glGetUniformdv)\
+STUB_VERBOSE(glMinSampleShading)\
+STUB_VERBOSE(glGetSubroutineUniformLocation)\
+STUB_VERBOSE(glGetSubroutineIndex)\
+STUB_VERBOSE(glGetActiveSubroutineUniformiv)\
+STUB_VERBOSE(glGetActiveSubroutineUniformName)\
+STUB_VERBOSE(glGetActiveSubroutineName)\
+STUB_VERBOSE(glUniformSubroutinesuiv)\
+STUB_VERBOSE(glGetUniformSubroutineuiv)\
+STUB_VERBOSE(glGetProgramStageiv)\
+STUB_VERBOSE(glPatchParameteri)\
+STUB_VERBOSE(glPatchParameterfv)\
+STUB_VERBOSE(glBindTransformFeedback)\
+STUB_VERBOSE(glDeleteTransformFeedbacks)\
+STUB_VERBOSE(glGenTransformFeedbacks)\
+STUB_VERBOSE(glIsTransformFeedback)\
+STUB_VERBOSE(glPauseTransformFeedback)\
+STUB_VERBOSE(glResumeTransformFeedback)\
+STUB_VERBOSE(glDrawTransformFeedback)\
+STUB_VERBOSE(glDrawTransformFeedbackStream)\
+STUB_VERBOSE(glBeginQueryIndexed)\
+STUB_VERBOSE(glEndQueryIndexed)\
+STUB_VERBOSE(glGetQueryIndexediv)\
+STUB_VERBOSE(glReleaseShaderCompiler)\
+STUB_VERBOSE(glShaderBinary)\
+STUB_VERBOSE(glGetShaderPrecisionFormat)\
+STUB_VERBOSE(glDepthRangef)\
+STUB_VERBOSE(glClearDepthf)\
+STUB_VERBOSE(glGetProgramBinary)\
+STUB_VERBOSE(glProgramBinary)\
+STUB_VERBOSE(glProgramParameteri)\
+STUB_VERBOSE(glUseProgramStages)\
+STUB_VERBOSE(glActiveShaderProgram)\
+STUB_VERBOSE(glCreateShaderProgramv)\
+STUB_VERBOSE(glBindProgramPipeline)\
+STUB_VERBOSE(glDeleteProgramPipelines)\
+STUB_VERBOSE(glGenProgramPipelines)\
+STUB_VERBOSE(glIsProgramPipeline)\
+STUB_VERBOSE(glGetProgramPipelineiv)\
+STUB_VERBOSE(glProgramUniform1i)\
+STUB_VERBOSE(glProgramUniform2i)\
+STUB_VERBOSE(glProgramUniform3i)\
+STUB_VERBOSE(glProgramUniform4i)\
+STUB_VERBOSE(glProgramUniform1ui)\
+STUB_VERBOSE(glProgramUniform2ui)\
+STUB_VERBOSE(glProgramUniform3ui)\
+STUB_VERBOSE(glProgramUniform4ui)\
+STUB_VERBOSE(glProgramUniform1f)\
+STUB_VERBOSE(glProgramUniform2f)\
+STUB_VERBOSE(glProgramUniform3f)\
+STUB_VERBOSE(glProgramUniform4f)\
+STUB_VERBOSE(glProgramUniform1d)\
+STUB_VERBOSE(glProgramUniform2d)\
+STUB_VERBOSE(glProgramUniform3d)\
+STUB_VERBOSE(glProgramUniform4d)\
+STUB_VERBOSE(glProgramUniform1iv)\
+STUB_VERBOSE(glProgramUniform2iv)\
+STUB_VERBOSE(glProgramUniform3iv)\
+STUB_VERBOSE(glProgramUniform4iv)\
+STUB_VERBOSE(glProgramUniform1uiv)\
+STUB_VERBOSE(glProgramUniform2uiv)\
+STUB_VERBOSE(glProgramUniform3uiv)\
+STUB_VERBOSE(glProgramUniform4uiv)\
+STUB_VERBOSE(glProgramUniform1fv)\
+STUB_VERBOSE(glProgramUniform2fv)\
+STUB_VERBOSE(glProgramUniform3fv)\
+STUB_VERBOSE(glProgramUniform4fv)\
+STUB_VERBOSE(glProgramUniform1dv)\
+STUB_VERBOSE(glProgramUniform2dv)\
+STUB_VERBOSE(glProgramUniform3dv)\
+STUB_VERBOSE(glProgramUniform4dv)\
+STUB_VERBOSE(glProgramUniformMatrix2fv)\
+STUB_VERBOSE(glProgramUniformMatrix3fv)\
+STUB_VERBOSE(glProgramUniformMatrix4fv)\
+STUB_VERBOSE(glProgramUniformMatrix2dv)\
+STUB_VERBOSE(glProgramUniformMatrix3dv)\
+STUB_VERBOSE(glProgramUniformMatrix4dv)\
+STUB_VERBOSE(glProgramUniformMatrix2x3fv)\
+STUB_VERBOSE(glProgramUniformMatrix3x2fv)\
+STUB_VERBOSE(glProgramUniformMatrix2x4fv)\
+STUB_VERBOSE(glProgramUniformMatrix4x2fv)\
+STUB_VERBOSE(glProgramUniformMatrix3x4fv)\
+STUB_VERBOSE(glProgramUniformMatrix4x3fv)\
+STUB_VERBOSE(glProgramUniformMatrix2x3dv)\
+STUB_VERBOSE(glProgramUniformMatrix3x2dv)\
+STUB_VERBOSE(glProgramUniformMatrix2x4dv)\
+STUB_VERBOSE(glProgramUniformMatrix4x2dv)\
+STUB_VERBOSE(glProgramUniformMatrix3x4dv)\
+STUB_VERBOSE(glProgramUniformMatrix4x3dv)\
+STUB_VERBOSE(glValidateProgramPipeline)\
+STUB_VERBOSE(glGetProgramPipelineInfoLog)\
+STUB_VERBOSE(glVertexAttribL1d)\
+STUB_VERBOSE(glVertexAttribL2d)\
+STUB_VERBOSE(glVertexAttribL3d)\
+STUB_VERBOSE(glVertexAttribL4d)\
+STUB_VERBOSE(glVertexAttribL1dv)\
+STUB_VERBOSE(glVertexAttribL2dv)\
+STUB_VERBOSE(glVertexAttribL3dv)\
+STUB_VERBOSE(glVertexAttribL4dv)\
+STUB_VERBOSE(glVertexAttribLPointer)\
+STUB_VERBOSE(glGetVertexAttribLdv)\
+STUB_VERBOSE(glViewportArrayv)\
+STUB_VERBOSE(glViewportIndexedf)\
+STUB_VERBOSE(glViewportIndexedfv)\
+STUB_VERBOSE(glScissorArrayv)\
+STUB_VERBOSE(glScissorIndexed)\
+STUB_VERBOSE(glScissorIndexedv)\
+STUB_VERBOSE(glDepthRangeArrayv)\
+STUB_VERBOSE(glDepthRangeIndexed)\
+STUB_VERBOSE(glGetFloati_v)\
+STUB_VERBOSE(glGetDoublei_v)\
+STUB_VERBOSE(glGetActiveAtomicCounterBufferiv)\
+STUB_VERBOSE(glTexStorage1D)\
+STUB_VERBOSE(glTexStorage2D)\
+STUB_VERBOSE(glTexStorage3D)\
+STUB_VERBOSE(glDrawTransformFeedbackInstanced)\
+STUB_VERBOSE(glDrawTransformFeedbackStreamInstanced)\
+STUB_VERBOSE(glDrawArraysInstancedBaseInstance)\
+STUB_VERBOSE(glDrawElementsInstancedBaseInstance)\
+STUB_VERBOSE(glDrawElementsInstancedBaseVertexBaseInstance)\
+STUB_VERBOSE(glBindImageTexture)\
+STUB_VERBOSE(glMemoryBarrier)\
+STUB_VERBOSE(glGetInternalformativ)\
+STUB_VERBOSE(glClearBufferData)\
+STUB_VERBOSE(glClearBufferSubData)\
+STUB_VERBOSE(glDispatchCompute)\
+STUB_VERBOSE(glDispatchComputeIndirect)\
+STUB_VERBOSE(glCopyImageSubData)\
+STUB_VERBOSE(glDebugMessageControl)\
+STUB_VERBOSE(glDebugMessageInsert)\
+STUB_VERBOSE(glDebugMessageCallback)\
+STUB_VERBOSE(glGetDebugMessageLog)\
+STUB_VERBOSE(glPushDebugGroup)\
+STUB_VERBOSE(glPopDebugGroup)\
+STUB_VERBOSE(glObjectLabel)\
+STUB_VERBOSE(glGetObjectLabel)\
+STUB_VERBOSE(glObjectPtrLabel)\
+STUB_VERBOSE(glGetObjectPtrLabel)\
+STUB_VERBOSE(glFramebufferParameteri)\
+STUB_VERBOSE(glGetFramebufferParameteriv)\
+STUB_VERBOSE(glGetInternalformati64v)\
+STUB_VERBOSE(glInvalidateTexSubImage)\
+STUB_VERBOSE(glInvalidateTexImage)\
+STUB_VERBOSE(glInvalidateBufferSubData)\
+STUB_VERBOSE(glInvalidateBufferData)\
+STUB_VERBOSE(glInvalidateFramebuffer)\
+STUB_VERBOSE(glInvalidateSubFramebuffer)\
+STUB_VERBOSE(glMultiDrawArraysIndirect)\
+STUB_VERBOSE(glMultiDrawElementsIndirect)\
+STUB_VERBOSE(glGetProgramInterfaceiv)\
+STUB_VERBOSE(glGetProgramResourceIndex)\
+STUB_VERBOSE(glGetProgramResourceName)\
+STUB_VERBOSE(glGetProgramResourceiv)\
+STUB_VERBOSE(glGetProgramResourceLocation)\
+STUB_VERBOSE(glGetProgramResourceLocationIndex)\
+STUB_VERBOSE(glShaderStorageBlockBinding)\
+STUB_VERBOSE(glTexBufferRange)\
+STUB_VERBOSE(glTexStorage2DMultisample)\
+STUB_VERBOSE(glTexStorage3DMultisample)\
+STUB_VERBOSE(glTextureView)\
+STUB_VERBOSE(glBindVertexBuffer)\
+STUB_VERBOSE(glVertexAttribFormat)\
+STUB_VERBOSE(glVertexAttribIFormat)\
+STUB_VERBOSE(glVertexAttribLFormat)\
+STUB_VERBOSE(glVertexAttribBinding)\
+STUB_VERBOSE(glVertexBindingDivisor)\
+STUB_VERBOSE(glBufferStorage)\
+STUB_VERBOSE(glClearTexSubImage)\
+STUB_VERBOSE(glClearTexImage)\
+STUB_VERBOSE(glBindBuffersBase)\
+STUB_VERBOSE(glBindBuffersRange)\
+STUB_VERBOSE(glBindTextures)\
+STUB_VERBOSE(glBindSamplers)\
+STUB_VERBOSE(glBindImageTextures)\
+STUB_VERBOSE(glBindVertexBuffers)\
+STUB_VERBOSE(glGetColorTable)\
+STUB_VERBOSE(glGetConvolutionFilter)\
+STUB_VERBOSE(glGetSeparableFilter)\
+STUB_VERBOSE(glGetHistogram)\
+STUB_VERBOSE(glGetMinmax)\
+STUB_VERBOSE(glClipControl)\
+STUB_VERBOSE(glCreateTransformFeedbacks)\
+STUB_VERBOSE(glTransformFeedbackBufferBase)\
+STUB_VERBOSE(glTransformFeedbackBufferRange)\
+STUB_VERBOSE(glGetTransformFeedbackiv)\
+STUB_VERBOSE(glGetTransformFeedbacki_v)\
+STUB_VERBOSE(glGetTransformFeedbacki64_v)\
+STUB_VERBOSE(glCreateBuffers)\
+STUB_VERBOSE(glNamedBufferStorage)\
+STUB_VERBOSE(glNamedBufferData)\
+STUB_VERBOSE(glNamedBufferSubData)\
+STUB_VERBOSE(glCopyNamedBufferSubData)\
+STUB_VERBOSE(glClearNamedBufferData)\
+STUB_VERBOSE(glClearNamedBufferSubData)\
+STUB_VERBOSE(glMapNamedBuffer)\
+STUB_VERBOSE(glMapNamedBufferRange)\
+STUB_VERBOSE(glUnmapNamedBuffer)\
+STUB_VERBOSE(glFlushMappedNamedBufferRange)\
+STUB_VERBOSE(glGetNamedBufferParameteriv)\
+STUB_VERBOSE(glGetNamedBufferParameteri64v)\
+STUB_VERBOSE(glGetNamedBufferPointerv)\
+STUB_VERBOSE(glGetNamedBufferSubData)\
+STUB_VERBOSE(glCreateFramebuffers)\
+STUB_VERBOSE(glNamedFramebufferRenderbuffer)\
+STUB_VERBOSE(glNamedFramebufferParameteri)\
+STUB_VERBOSE(glNamedFramebufferTexture)\
+STUB_VERBOSE(glNamedFramebufferTextureLayer)\
+STUB_VERBOSE(glNamedFramebufferDrawBuffer)\
+STUB_VERBOSE(glNamedFramebufferDrawBuffers)\
+STUB_VERBOSE(glNamedFramebufferReadBuffer)\
+STUB_VERBOSE(glInvalidateNamedFramebufferData)\
+STUB_VERBOSE(glInvalidateNamedFramebufferSubData)\
+STUB_VERBOSE(glClearNamedFramebufferiv)\
+STUB_VERBOSE(glClearNamedFramebufferuiv)\
+STUB_VERBOSE(glClearNamedFramebufferfv)\
+STUB_VERBOSE(glClearNamedFramebufferfi)\
+STUB_VERBOSE(glBlitNamedFramebuffer)\
+STUB_VERBOSE(glCheckNamedFramebufferStatus)\
+STUB_VERBOSE(glGetNamedFramebufferParameteriv)\
+STUB_VERBOSE(glGetNamedFramebufferAttachmentParameteriv)\
+STUB_VERBOSE(glCreateRenderbuffers)\
+STUB_VERBOSE(glNamedRenderbufferStorage)\
+STUB_VERBOSE(glNamedRenderbufferStorageMultisample)\
+STUB_VERBOSE(glGetNamedRenderbufferParameteriv)\
+STUB_VERBOSE(glCreateTextures)\
+STUB_VERBOSE(glTextureBuffer)\
+STUB_VERBOSE(glTextureBufferRange)\
+STUB_VERBOSE(glTextureStorage1D)\
+STUB_VERBOSE(glTextureStorage2D)\
+STUB_VERBOSE(glTextureStorage3D)\
+STUB_VERBOSE(glTextureStorage2DMultisample)\
+STUB_VERBOSE(glTextureStorage3DMultisample)\
+STUB_VERBOSE(glTextureSubImage1D)\
+STUB_VERBOSE(glTextureSubImage2D)\
+STUB_VERBOSE(glTextureSubImage3D)\
+STUB_VERBOSE(glCompressedTextureSubImage1D)\
+STUB_VERBOSE(glCompressedTextureSubImage2D)\
+STUB_VERBOSE(glCompressedTextureSubImage3D)\
+STUB_VERBOSE(glCopyTextureSubImage1D)\
+STUB_VERBOSE(glCopyTextureSubImage2D)\
+STUB_VERBOSE(glCopyTextureSubImage3D)\
+STUB_VERBOSE(glTextureParameterf)\
+STUB_VERBOSE(glTextureParameterfv)\
+STUB_VERBOSE(glTextureParameteri)\
+STUB_VERBOSE(glTextureParameterIiv)\
+STUB_VERBOSE(glTextureParameterIuiv)\
+STUB_VERBOSE(glTextureParameteriv)\
+STUB_VERBOSE(glGenerateTextureMipmap)\
+STUB_VERBOSE(glBindTextureUnit)\
+STUB_VERBOSE(glGetTextureImage)\
+STUB_VERBOSE(glGetCompressedTextureImage)\
+STUB_VERBOSE(glGetTextureLevelParameterfv)\
+STUB_VERBOSE(glGetTextureLevelParameteriv)\
+STUB_VERBOSE(glGetTextureParameterfv)\
+STUB_VERBOSE(glGetTextureParameterIiv)\
+STUB_VERBOSE(glGetTextureParameterIuiv)\
+STUB_VERBOSE(glGetTextureParameteriv)\
+STUB_VERBOSE(glCreateVertexArrays)\
+STUB_VERBOSE(glDisableVertexArrayAttrib)\
+STUB_VERBOSE(glEnableVertexArrayAttrib)\
+STUB_VERBOSE(glVertexArrayElementBuffer)\
+STUB_VERBOSE(glVertexArrayVertexBuffer)\
+STUB_VERBOSE(glVertexArrayVertexBuffers)\
+STUB_VERBOSE(glVertexArrayAttribFormat)\
+STUB_VERBOSE(glVertexArrayAttribIFormat)\
+STUB_VERBOSE(glVertexArrayAttribLFormat)\
+STUB_VERBOSE(glVertexArrayAttribBinding)\
+STUB_VERBOSE(glVertexArrayBindingDivisor)\
+STUB_VERBOSE(glGetVertexArrayiv)\
+STUB_VERBOSE(glGetVertexArrayIndexediv)\
+STUB_VERBOSE(glGetVertexArrayIndexed64iv)\
+STUB_VERBOSE(glCreateSamplers)\
+STUB_VERBOSE(glCreateProgramPipelines)\
+STUB_VERBOSE(glCreateQueries)\
+STUB_VERBOSE(glGetQueryBufferObjectiv)\
+STUB_VERBOSE(glGetQueryBufferObjectuiv)\
+STUB_VERBOSE(glGetQueryBufferObjecti64v)\
+STUB_VERBOSE(glGetQueryBufferObjectui64v)\
+STUB_VERBOSE(glMemoryBarrierByRegion)\
+STUB_VERBOSE(glGetTextureSubImage)\
+STUB_VERBOSE(glGetCompressedTextureSubImage)\
+STUB_VERBOSE(glTextureBarrier)\
+STUB_VERBOSE(glGetGraphicsResetStatus)\
+STUB_VERBOSE(glReadnPixels)\
+STUB_VERBOSE(glGetnUniformfv)\
+STUB_VERBOSE(glGetnUniformiv)\
+STUB_VERBOSE(glGetnUniformuiv)\
+STUB_VERBOSE(glMultiDrawArraysIndirectCount)\
+STUB_VERBOSE(glMultiDrawElementsIndirectCount)\
+STUB_VERBOSE(glPolygonOffsetClamp)\
+STUB_VERBOSE(glSpecializeShader)\
+STUB_VERBOSE(glDebugMessageEnableAMD)\
+STUB_VERBOSE(glDebugMessageInsertAMD)\
+STUB_VERBOSE(glDebugMessageCallbackAMD)\
+STUB_VERBOSE(glGetDebugMessageLogAMD)\
+STUB_VERBOSE(glBlendFuncIndexedAMD)\
+STUB_VERBOSE(glBlendFuncSeparateIndexedAMD)\
+STUB_VERBOSE(glBlendEquationIndexedAMD)\
+STUB_VERBOSE(glBlendEquationSeparateIndexedAMD)\
+STUB_VERBOSE(glRenderbufferStorageMultisampleAdvancedAMD)\
+STUB_VERBOSE(glNamedRenderbufferStorageMultisampleAdvancedAMD)\
+STUB_VERBOSE(glUniform1i64NV)\
+STUB_VERBOSE(glUniform2i64NV)\
+STUB_VERBOSE(glUniform3i64NV)\
+STUB_VERBOSE(glUniform4i64NV)\
+STUB_VERBOSE(glUniform1i64vNV)\
+STUB_VERBOSE(glUniform2i64vNV)\
+STUB_VERBOSE(glUniform3i64vNV)\
+STUB_VERBOSE(glUniform4i64vNV)\
+STUB_VERBOSE(glUniform1ui64NV)\
+STUB_VERBOSE(glUniform2ui64NV)\
+STUB_VERBOSE(glUniform3ui64NV)\
+STUB_VERBOSE(glUniform4ui64NV)\
+STUB_VERBOSE(glUniform1ui64vNV)\
+STUB_VERBOSE(glUniform2ui64vNV)\
+STUB_VERBOSE(glUniform3ui64vNV)\
+STUB_VERBOSE(glUniform4ui64vNV)\
+STUB_VERBOSE(glGetUniformi64vNV)\
+STUB_VERBOSE(glGetUniformui64vNV)\
+STUB_VERBOSE(glProgramUniform1i64NV)\
+STUB_VERBOSE(glProgramUniform2i64NV)\
+STUB_VERBOSE(glProgramUniform3i64NV)\
+STUB_VERBOSE(glProgramUniform4i64NV)\
+STUB_VERBOSE(glProgramUniform1i64vNV)\
+STUB_VERBOSE(glProgramUniform2i64vNV)\
+STUB_VERBOSE(glProgramUniform3i64vNV)\
+STUB_VERBOSE(glProgramUniform4i64vNV)\
+STUB_VERBOSE(glProgramUniform1ui64NV)\
+STUB_VERBOSE(glProgramUniform2ui64NV)\
+STUB_VERBOSE(glProgramUniform3ui64NV)\
+STUB_VERBOSE(glProgramUniform4ui64NV)\
+STUB_VERBOSE(glProgramUniform1ui64vNV)\
+STUB_VERBOSE(glProgramUniform2ui64vNV)\
+STUB_VERBOSE(glProgramUniform3ui64vNV)\
+STUB_VERBOSE(glProgramUniform4ui64vNV)\
+STUB_VERBOSE(glVertexAttribParameteriAMD)\
+STUB_VERBOSE(glQueryObjectParameteruiAMD)\
+STUB_VERBOSE(glGetPerfMonitorGroupsAMD)\
+STUB_VERBOSE(glGetPerfMonitorCountersAMD)\
+STUB_VERBOSE(glGetPerfMonitorGroupStringAMD)\
+STUB_VERBOSE(glGetPerfMonitorCounterStringAMD)\
+STUB_VERBOSE(glGetPerfMonitorCounterInfoAMD)\
+STUB_VERBOSE(glGenPerfMonitorsAMD)\
+STUB_VERBOSE(glDeletePerfMonitorsAMD)\
+STUB_VERBOSE(glSelectPerfMonitorCountersAMD)\
+STUB_VERBOSE(glBeginPerfMonitorAMD)\
+STUB_VERBOSE(glEndPerfMonitorAMD)\
+STUB_VERBOSE(glGetPerfMonitorCounterDataAMD)\
+STUB_VERBOSE(glSetMultisamplefvAMD)\
+STUB_VERBOSE(glTexStorageSparseAMD)\
+STUB_VERBOSE(glTextureStorageSparseAMD)\
+STUB_VERBOSE(glStencilOpValueAMD)\
+STUB_VERBOSE(glTessellationFactorAMD)\
+STUB_VERBOSE(glTessellationModeAMD)\
+STUB_VERBOSE(glGetTextureHandleARB)\
+STUB_VERBOSE(glGetTextureSamplerHandleARB)\
+STUB_VERBOSE(glMakeTextureHandleResidentARB)\
+STUB_VERBOSE(glMakeTextureHandleNonResidentARB)\
+STUB_VERBOSE(glGetImageHandleARB)\
+STUB_VERBOSE(glMakeImageHandleResidentARB)\
+STUB_VERBOSE(glMakeImageHandleNonResidentARB)\
+STUB_VERBOSE(glUniformHandleui64ARB)\
+STUB_VERBOSE(glUniformHandleui64vARB)\
+STUB_VERBOSE(glProgramUniformHandleui64ARB)\
+STUB_VERBOSE(glProgramUniformHandleui64vARB)\
+STUB_VERBOSE(glIsTextureHandleResidentARB)\
+STUB_VERBOSE(glIsImageHandleResidentARB)\
+STUB_VERBOSE(glVertexAttribL1ui64ARB)\
+STUB_VERBOSE(glVertexAttribL1ui64vARB)\
+STUB_VERBOSE(glGetVertexAttribLui64vARB)\
+STUB_VERBOSE(glNamedBufferStorageEXT)\
+STUB_VERBOSE(glCreateSyncFromCLeventARB)\
+STUB_VERBOSE(glClearNamedBufferDataEXT)\
+STUB_VERBOSE(glClearNamedBufferSubDataEXT)\
+STUB_VERBOSE(glClampColorARB)\
+STUB_VERBOSE(glDispatchComputeGroupSizeARB)\
+STUB_VERBOSE(glDebugMessageControlARB)\
+STUB_VERBOSE(glDebugMessageInsertARB)\
+STUB_VERBOSE(glDebugMessageCallbackARB)\
+STUB_VERBOSE(glGetDebugMessageLogARB)\
+STUB_VERBOSE(glDrawBuffersARB)\
+STUB_VERBOSE(glBlendEquationiARB)\
+STUB_VERBOSE(glBlendEquationSeparateiARB)\
+STUB_VERBOSE(glBlendFunciARB)\
+STUB_VERBOSE(glBlendFuncSeparateiARB)\
+STUB_VERBOSE(glDrawArraysInstancedARB)\
+STUB_VERBOSE(glDrawElementsInstancedARB)\
+STUB_VERBOSE(glPrimitiveBoundingBoxARB)\
+STUB_VERBOSE(glNamedFramebufferParameteriEXT)\
+STUB_VERBOSE(glGetNamedFramebufferParameterivEXT)\
+STUB_VERBOSE(glProgramParameteriARB)\
+STUB_VERBOSE(glFramebufferTextureARB)\
+STUB_VERBOSE(glFramebufferTextureLayerARB)\
+STUB_VERBOSE(glFramebufferTextureFaceARB)\
+STUB_VERBOSE(glSpecializeShaderARB)\
+STUB_VERBOSE(glUniform1i64ARB)\
+STUB_VERBOSE(glUniform1i64vARB)\
+STUB_VERBOSE(glProgramUniform1i64ARB)\
+STUB_VERBOSE(glProgramUniform1i64vARB)\
+STUB_VERBOSE(glUniform2i64ARB)\
+STUB_VERBOSE(glUniform2i64vARB)\
+STUB_VERBOSE(glProgramUniform2i64ARB)\
+STUB_VERBOSE(glProgramUniform2i64vARB)\
+STUB_VERBOSE(glUniform3i64ARB)\
+STUB_VERBOSE(glUniform3i64vARB)\
+STUB_VERBOSE(glProgramUniform3i64ARB)\
+STUB_VERBOSE(glProgramUniform3i64vARB)\
+STUB_VERBOSE(glUniform4i64ARB)\
+STUB_VERBOSE(glUniform4i64vARB)\
+STUB_VERBOSE(glProgramUniform4i64ARB)\
+STUB_VERBOSE(glProgramUniform4i64vARB)\
+STUB_VERBOSE(glUniform1ui64ARB)\
+STUB_VERBOSE(glUniform1ui64vARB)\
+STUB_VERBOSE(glProgramUniform1ui64ARB)\
+STUB_VERBOSE(glProgramUniform1ui64vARB)\
+STUB_VERBOSE(glUniform2ui64ARB)\
+STUB_VERBOSE(glUniform2ui64vARB)\
+STUB_VERBOSE(glProgramUniform2ui64ARB)\
+STUB_VERBOSE(glProgramUniform2ui64vARB)\
+STUB_VERBOSE(glUniform3ui64ARB)\
+STUB_VERBOSE(glUniform3ui64vARB)\
+STUB_VERBOSE(glProgramUniform3ui64ARB)\
+STUB_VERBOSE(glProgramUniform3ui64vARB)\
+STUB_VERBOSE(glUniform4ui64ARB)\
+STUB_VERBOSE(glUniform4ui64vARB)\
+STUB_VERBOSE(glProgramUniform4ui64ARB)\
+STUB_VERBOSE(glProgramUniform4ui64vARB)\
+STUB_VERBOSE(glGetUniformi64vARB)\
+STUB_VERBOSE(glGetUniformui64vARB)\
+STUB_VERBOSE(glGetnUniformi64vARB)\
+STUB_VERBOSE(glGetnUniformui64vARB)\
+STUB_VERBOSE(glColorTable)\
+STUB_VERBOSE(glCopyColorTable)\
+STUB_VERBOSE(glColorTableParameteriv)\
+STUB_VERBOSE(glColorTableParameterfv)\
+STUB_VERBOSE(glGetColorTableParameteriv)\
+STUB_VERBOSE(glGetColorTableParameterfv)\
+STUB_VERBOSE(glColorSubTable)\
+STUB_VERBOSE(glCopyColorSubTable)\
+STUB_VERBOSE(glConvolutionFilter1D)\
+STUB_VERBOSE(glConvolutionFilter2D)\
+STUB_VERBOSE(glCopyConvolutionFilter1D)\
+STUB_VERBOSE(glCopyConvolutionFilter2D)\
+STUB_VERBOSE(glSeparableFilter2D)\
+STUB_VERBOSE(glConvolutionParameteri)\
+STUB_VERBOSE(glConvolutionParameteriv)\
+STUB_VERBOSE(glConvolutionParameterf)\
+STUB_VERBOSE(glConvolutionParameterfv)\
+STUB_VERBOSE(glGetConvolutionParameteriv)\
+STUB_VERBOSE(glGetConvolutionParameterfv)\
+STUB_VERBOSE(glHistogram)\
+STUB_VERBOSE(glResetHistogram)\
+STUB_VERBOSE(glGetHistogramParameteriv)\
+STUB_VERBOSE(glGetHistogramParameterfv)\
+STUB_VERBOSE(glMinmax)\
+STUB_VERBOSE(glResetMinmax)\
+STUB_VERBOSE(glGetMinmaxParameteriv)\
+STUB_VERBOSE(glGetMinmaxParameterfv)\
+STUB_VERBOSE(glMultiDrawArraysIndirectCountARB)\
+STUB_VERBOSE(glMultiDrawElementsIndirectCountARB)\
+STUB_VERBOSE(glVertexAttribDivisorARB)\
+STUB_VERBOSE(glCurrentPaletteMatrixARB)\
+STUB_VERBOSE(glMatrixIndexuivARB)\
+STUB_VERBOSE(glMatrixIndexubvARB)\
+STUB_VERBOSE(glMatrixIndexusvARB)\
+STUB_VERBOSE(glMatrixIndexPointerARB)\
+STUB_VERBOSE(glSampleCoverageARB)\
+STUB_VERBOSE(glActiveTextureARB)\
+STUB_VERBOSE(glClientActiveTextureARB)\
+STUB_VERBOSE(glMultiTexCoord1fARB)\
+STUB_VERBOSE(glMultiTexCoord1sARB)\
+STUB_VERBOSE(glMultiTexCoord1iARB)\
+STUB_VERBOSE(glMultiTexCoord1dARB)\
+STUB_VERBOSE(glMultiTexCoord1fvARB)\
+STUB_VERBOSE(glMultiTexCoord1svARB)\
+STUB_VERBOSE(glMultiTexCoord1ivARB)\
+STUB_VERBOSE(glMultiTexCoord1dvARB)\
+STUB_VERBOSE(glMultiTexCoord2fARB)\
+STUB_VERBOSE(glMultiTexCoord2sARB)\
+STUB_VERBOSE(glMultiTexCoord2iARB)\
+STUB_VERBOSE(glMultiTexCoord2dARB)\
+STUB_VERBOSE(glMultiTexCoord2fvARB)\
+STUB_VERBOSE(glMultiTexCoord2svARB)\
+STUB_VERBOSE(glMultiTexCoord2ivARB)\
+STUB_VERBOSE(glMultiTexCoord2dvARB)\
+STUB_VERBOSE(glMultiTexCoord3fARB)\
+STUB_VERBOSE(glMultiTexCoord3sARB)\
+STUB_VERBOSE(glMultiTexCoord3iARB)\
+STUB_VERBOSE(glMultiTexCoord3dARB)\
+STUB_VERBOSE(glMultiTexCoord3fvARB)\
+STUB_VERBOSE(glMultiTexCoord3svARB)\
+STUB_VERBOSE(glMultiTexCoord3ivARB)\
+STUB_VERBOSE(glMultiTexCoord3dvARB)\
+STUB_VERBOSE(glMultiTexCoord4fARB)\
+STUB_VERBOSE(glMultiTexCoord4sARB)\
+STUB_VERBOSE(glMultiTexCoord4iARB)\
+STUB_VERBOSE(glMultiTexCoord4dARB)\
+STUB_VERBOSE(glMultiTexCoord4fvARB)\
+STUB_VERBOSE(glMultiTexCoord4svARB)\
+STUB_VERBOSE(glMultiTexCoord4ivARB)\
+STUB_VERBOSE(glMultiTexCoord4dvARB)\
+STUB_VERBOSE(glGenQueriesARB)\
+STUB_VERBOSE(glDeleteQueriesARB)\
+STUB_VERBOSE(glIsQueryARB)\
+STUB_VERBOSE(glBeginQueryARB)\
+STUB_VERBOSE(glEndQueryARB)\
+STUB_VERBOSE(glGetQueryivARB)\
+STUB_VERBOSE(glGetQueryObjectivARB)\
+STUB_VERBOSE(glGetQueryObjectuivARB)\
+STUB_VERBOSE(glMaxShaderCompilerThreadsARB)\
+STUB_VERBOSE(glPointParameterfARB)\
+STUB_VERBOSE(glPointParameterfvARB)\
+STUB_VERBOSE(glGetGraphicsResetStatusARB)\
+STUB_VERBOSE(glGetnMapdvARB)\
+STUB_VERBOSE(glGetnMapfvARB)\
+STUB_VERBOSE(glGetnMapivARB)\
+STUB_VERBOSE(glGetnPixelMapfvARB)\
+STUB_VERBOSE(glGetnPixelMapuivARB)\
+STUB_VERBOSE(glGetnPixelMapusvARB)\
+STUB_VERBOSE(glGetnPolygonStippleARB)\
+STUB_VERBOSE(glGetnTexImageARB)\
+STUB_VERBOSE(glReadnPixelsARB)\
+STUB_VERBOSE(glGetnColorTableARB)\
+STUB_VERBOSE(glGetnConvolutionFilterARB)\
+STUB_VERBOSE(glGetnSeparableFilterARB)\
+STUB_VERBOSE(glGetnHistogramARB)\
+STUB_VERBOSE(glGetnMinmaxARB)\
+STUB_VERBOSE(glGetnCompressedTexImageARB)\
+STUB_VERBOSE(glGetnUniformfvARB)\
+STUB_VERBOSE(glGetnUniformivARB)\
+STUB_VERBOSE(glGetnUniformuivARB)\
+STUB_VERBOSE(glGetnUniformdvARB)\
+STUB_VERBOSE(glFramebufferSampleLocationsfvARB)\
+STUB_VERBOSE(glNamedFramebufferSampleLocationsfvARB)\
+STUB_VERBOSE(glEvaluateDepthValuesARB)\
+STUB_VERBOSE(glMinSampleShadingARB)\
+STUB_VERBOSE(glDeleteObjectARB)\
+STUB_VERBOSE(glGetHandleARB)\
+STUB_VERBOSE(glDetachObjectARB)\
+STUB_VERBOSE(glCreateShaderObjectARB)\
+STUB_VERBOSE(glShaderSourceARB)\
+STUB_VERBOSE(glCompileShaderARB)\
+STUB_VERBOSE(glCreateProgramObjectARB)\
+STUB_VERBOSE(glAttachObjectARB)\
+STUB_VERBOSE(glLinkProgramARB)\
+STUB_VERBOSE(glUseProgramObjectARB)\
+STUB_VERBOSE(glValidateProgramARB)\
+STUB_VERBOSE(glUniform1fARB)\
+STUB_VERBOSE(glUniform2fARB)\
+STUB_VERBOSE(glUniform3fARB)\
+STUB_VERBOSE(glUniform4fARB)\
+STUB_VERBOSE(glUniform1iARB)\
+STUB_VERBOSE(glUniform2iARB)\
+STUB_VERBOSE(glUniform3iARB)\
+STUB_VERBOSE(glUniform4iARB)\
+STUB_VERBOSE(glUniform1fvARB)\
+STUB_VERBOSE(glUniform2fvARB)\
+STUB_VERBOSE(glUniform3fvARB)\
+STUB_VERBOSE(glUniform4fvARB)\
+STUB_VERBOSE(glUniform1ivARB)\
+STUB_VERBOSE(glUniform2ivARB)\
+STUB_VERBOSE(glUniform3ivARB)\
+STUB_VERBOSE(glUniform4ivARB)\
+STUB_VERBOSE(glUniformMatrix2fvARB)\
+STUB_VERBOSE(glUniformMatrix3fvARB)\
+STUB_VERBOSE(glUniformMatrix4fvARB)\
+STUB_VERBOSE(glGetObjectParameterfvARB)\
+STUB_VERBOSE(glGetObjectParameterivARB)\
+STUB_VERBOSE(glGetInfoLogARB)\
+STUB_VERBOSE(glGetAttachedObjectsARB)\
+STUB_VERBOSE(glGetUniformLocationARB)\
+STUB_VERBOSE(glGetActiveUniformARB)\
+STUB_VERBOSE(glGetUniformfvARB)\
+STUB_VERBOSE(glGetUniformivARB)\
+STUB_VERBOSE(glGetShaderSourceARB)\
+STUB_VERBOSE(glNamedStringARB)\
+STUB_VERBOSE(glDeleteNamedStringARB)\
+STUB_VERBOSE(glCompileShaderIncludeARB)\
+STUB_VERBOSE(glIsNamedStringARB)\
+STUB_VERBOSE(glGetNamedStringARB)\
+STUB_VERBOSE(glGetNamedStringivARB)\
+STUB_VERBOSE(glBufferPageCommitmentARB)\
+STUB_VERBOSE(glTexPageCommitmentARB)\
+STUB_VERBOSE(glTexturePageCommitmentEXT)\
+STUB_VERBOSE(glTexBufferARB)\
+STUB_VERBOSE(glTextureBufferRangeEXT)\
+STUB_VERBOSE(glCompressedTexImage3DARB)\
+STUB_VERBOSE(glCompressedTexImage2DARB)\
+STUB_VERBOSE(glCompressedTexImage1DARB)\
+STUB_VERBOSE(glCompressedTexSubImage3DARB)\
+STUB_VERBOSE(glCompressedTexSubImage2DARB)\
+STUB_VERBOSE(glCompressedTexSubImage1DARB)\
+STUB_VERBOSE(glGetCompressedTexImageARB)\
+STUB_VERBOSE(glTextureStorage1DEXT)\
+STUB_VERBOSE(glTextureStorage2DEXT)\
+STUB_VERBOSE(glTextureStorage3DEXT)\
+STUB_VERBOSE(glTextureStorage2DMultisampleEXT)\
+STUB_VERBOSE(glTextureStorage3DMultisampleEXT)\
+STUB_VERBOSE(glLoadTransposeMatrixfARB)\
+STUB_VERBOSE(glLoadTransposeMatrixdARB)\
+STUB_VERBOSE(glMultTransposeMatrixfARB)\
+STUB_VERBOSE(glMultTransposeMatrixdARB)\
+STUB_VERBOSE(glVertexArrayVertexAttribLOffsetEXT)\
+STUB_VERBOSE(glVertexArrayBindVertexBufferEXT)\
+STUB_VERBOSE(glVertexArrayVertexAttribFormatEXT)\
+STUB_VERBOSE(glVertexArrayVertexAttribIFormatEXT)\
+STUB_VERBOSE(glVertexArrayVertexAttribLFormatEXT)\
+STUB_VERBOSE(glVertexArrayVertexAttribBindingEXT)\
+STUB_VERBOSE(glVertexArrayVertexBindingDivisorEXT)\
+STUB_VERBOSE(glWeightfvARB)\
+STUB_VERBOSE(glWeightbvARB)\
+STUB_VERBOSE(glWeightubvARB)\
+STUB_VERBOSE(glWeightsvARB)\
+STUB_VERBOSE(glWeightusvARB)\
+STUB_VERBOSE(glWeightivARB)\
+STUB_VERBOSE(glWeightuivARB)\
+STUB_VERBOSE(glWeightdvARB)\
+STUB_VERBOSE(glWeightPointerARB)\
+STUB_VERBOSE(glVertexBlendARB)\
+STUB_VERBOSE(glBindBufferARB)\
+STUB_VERBOSE(glDeleteBuffersARB)\
+STUB_VERBOSE(glGenBuffersARB)\
+STUB_VERBOSE(glIsBufferARB)\
+STUB_VERBOSE(glBufferDataARB)\
+STUB_VERBOSE(glBufferSubDataARB)\
+STUB_VERBOSE(glGetBufferSubDataARB)\
+STUB_VERBOSE(glMapBufferARB)\
+STUB_VERBOSE(glUnmapBufferARB)\
+STUB_VERBOSE(glGetBufferParameterivARB)\
+STUB_VERBOSE(glGetBufferPointervARB)\
+STUB_VERBOSE(glVertexAttrib1sARB)\
+STUB_VERBOSE(glVertexAttrib1fARB)\
+STUB_VERBOSE(glVertexAttrib1dARB)\
+STUB_VERBOSE(glVertexAttrib2sARB)\
+STUB_VERBOSE(glVertexAttrib2fARB)\
+STUB_VERBOSE(glVertexAttrib2dARB)\
+STUB_VERBOSE(glVertexAttrib3sARB)\
+STUB_VERBOSE(glVertexAttrib3fARB)\
+STUB_VERBOSE(glVertexAttrib3dARB)\
+STUB_VERBOSE(glVertexAttrib4sARB)\
+STUB_VERBOSE(glVertexAttrib4fARB)\
+STUB_VERBOSE(glVertexAttrib4dARB)\
+STUB_VERBOSE(glVertexAttrib4NubARB)\
+STUB_VERBOSE(glVertexAttrib1svARB)\
+STUB_VERBOSE(glVertexAttrib1fvARB)\
+STUB_VERBOSE(glVertexAttrib1dvARB)\
+STUB_VERBOSE(glVertexAttrib2svARB)\
+STUB_VERBOSE(glVertexAttrib2fvARB)\
+STUB_VERBOSE(glVertexAttrib2dvARB)\
+STUB_VERBOSE(glVertexAttrib3svARB)\
+STUB_VERBOSE(glVertexAttrib3fvARB)\
+STUB_VERBOSE(glVertexAttrib3dvARB)\
+STUB_VERBOSE(glVertexAttrib4fvARB)\
+STUB_VERBOSE(glVertexAttrib4bvARB)\
+STUB_VERBOSE(glVertexAttrib4svARB)\
+STUB_VERBOSE(glVertexAttrib4ivARB)\
+STUB_VERBOSE(glVertexAttrib4ubvARB)\
+STUB_VERBOSE(glVertexAttrib4usvARB)\
+STUB_VERBOSE(glVertexAttrib4uivARB)\
+STUB_VERBOSE(glVertexAttrib4dvARB)\
+STUB_VERBOSE(glVertexAttrib4NbvARB)\
+STUB_VERBOSE(glVertexAttrib4NsvARB)\
+STUB_VERBOSE(glVertexAttrib4NivARB)\
+STUB_VERBOSE(glVertexAttrib4NubvARB)\
+STUB_VERBOSE(glVertexAttrib4NusvARB)\
+STUB_VERBOSE(glVertexAttrib4NuivARB)\
+STUB_VERBOSE(glVertexAttribPointerARB)\
+STUB_VERBOSE(glEnableVertexAttribArrayARB)\
+STUB_VERBOSE(glDisableVertexAttribArrayARB)\
+STUB_VERBOSE(glProgramStringARB)\
+STUB_VERBOSE(glBindProgramARB)\
+STUB_VERBOSE(glDeleteProgramsARB)\
+STUB_VERBOSE(glGenProgramsARB)\
+STUB_VERBOSE(glProgramEnvParameter4dARB)\
+STUB_VERBOSE(glProgramEnvParameter4dvARB)\
+STUB_VERBOSE(glProgramEnvParameter4fARB)\
+STUB_VERBOSE(glProgramEnvParameter4fvARB)\
+STUB_VERBOSE(glProgramLocalParameter4dARB)\
+STUB_VERBOSE(glProgramLocalParameter4dvARB)\
+STUB_VERBOSE(glProgramLocalParameter4fARB)\
+STUB_VERBOSE(glProgramLocalParameter4fvARB)\
+STUB_VERBOSE(glGetProgramEnvParameterfvARB)\
+STUB_VERBOSE(glGetProgramEnvParameterdvARB)\
+STUB_VERBOSE(glGetProgramLocalParameterfvARB)\
+STUB_VERBOSE(glGetProgramLocalParameterdvARB)\
+STUB_VERBOSE(glGetProgramivARB)\
+STUB_VERBOSE(glGetProgramStringARB)\
+STUB_VERBOSE(glGetVertexAttribfvARB)\
+STUB_VERBOSE(glGetVertexAttribdvARB)\
+STUB_VERBOSE(glGetVertexAttribivARB)\
+STUB_VERBOSE(glGetVertexAttribPointervARB)\
+STUB_VERBOSE(glIsProgramARB)\
+STUB_VERBOSE(glBindAttribLocationARB)\
+STUB_VERBOSE(glGetActiveAttribARB)\
+STUB_VERBOSE(glGetAttribLocationARB)\
+STUB_VERBOSE(glWindowPos2iARB)\
+STUB_VERBOSE(glWindowPos2sARB)\
+STUB_VERBOSE(glWindowPos2fARB)\
+STUB_VERBOSE(glWindowPos2dARB)\
+STUB_VERBOSE(glWindowPos2ivARB)\
+STUB_VERBOSE(glWindowPos2svARB)\
+STUB_VERBOSE(glWindowPos2fvARB)\
+STUB_VERBOSE(glWindowPos2dvARB)\
+STUB_VERBOSE(glWindowPos3iARB)\
+STUB_VERBOSE(glWindowPos3sARB)\
+STUB_VERBOSE(glWindowPos3fARB)\
+STUB_VERBOSE(glWindowPos3dARB)\
+STUB_VERBOSE(glWindowPos3ivARB)\
+STUB_VERBOSE(glWindowPos3svARB)\
+STUB_VERBOSE(glWindowPos3fvARB)\
+STUB_VERBOSE(glWindowPos3dvARB)\
+STUB_VERBOSE(glUniformBufferEXT)\
+STUB_VERBOSE(glGetUniformBufferSizeEXT)\
+STUB_VERBOSE(glGetUniformOffsetEXT)\
+STUB_VERBOSE(glBlendColorEXT)\
+STUB_VERBOSE(glBlendEquationSeparateEXT)\
+STUB_VERBOSE(glBlendFuncSeparateEXT)\
+STUB_VERBOSE(glBlendEquationEXT)\
+STUB_VERBOSE(glLockArraysEXT)\
+STUB_VERBOSE(glUnlockArraysEXT)\
+STUB_VERBOSE(glLabelObjectEXT)\
+STUB_VERBOSE(glGetObjectLabelEXT)\
+STUB_VERBOSE(glInsertEventMarkerEXT)\
+STUB_VERBOSE(glPushGroupMarkerEXT)\
+STUB_VERBOSE(glPopGroupMarkerEXT)\
+STUB_VERBOSE(glDepthBoundsEXT)\
+STUB_VERBOSE(glClientAttribDefaultEXT)\
+STUB_VERBOSE(glPushClientAttribDefaultEXT)\
+STUB_VERBOSE(glMatrixLoadfEXT)\
+STUB_VERBOSE(glMatrixLoaddEXT)\
+STUB_VERBOSE(glMatrixMultfEXT)\
+STUB_VERBOSE(glMatrixMultdEXT)\
+STUB_VERBOSE(glMatrixLoadIdentityEXT)\
+STUB_VERBOSE(glMatrixRotatefEXT)\
+STUB_VERBOSE(glMatrixRotatedEXT)\
+STUB_VERBOSE(glMatrixScalefEXT)\
+STUB_VERBOSE(glMatrixScaledEXT)\
+STUB_VERBOSE(glMatrixTranslatefEXT)\
+STUB_VERBOSE(glMatrixTranslatedEXT)\
+STUB_VERBOSE(glMatrixOrthoEXT)\
+STUB_VERBOSE(glMatrixFrustumEXT)\
+STUB_VERBOSE(glMatrixPushEXT)\
+STUB_VERBOSE(glMatrixPopEXT)\
+STUB_VERBOSE(glTextureParameteriEXT)\
+STUB_VERBOSE(glTextureParameterivEXT)\
+STUB_VERBOSE(glTextureParameterfEXT)\
+STUB_VERBOSE(glTextureParameterfvEXT)\
+STUB_VERBOSE(glTextureImage1DEXT)\
+STUB_VERBOSE(glTextureImage2DEXT)\
+STUB_VERBOSE(glTextureSubImage1DEXT)\
+STUB_VERBOSE(glTextureSubImage2DEXT)\
+STUB_VERBOSE(glCopyTextureImage1DEXT)\
+STUB_VERBOSE(glCopyTextureImage2DEXT)\
+STUB_VERBOSE(glCopyTextureSubImage1DEXT)\
+STUB_VERBOSE(glCopyTextureSubImage2DEXT)\
+STUB_VERBOSE(glGetTextureImageEXT)\
+STUB_VERBOSE(glGetTextureParameterfvEXT)\
+STUB_VERBOSE(glGetTextureParameterivEXT)\
+STUB_VERBOSE(glGetTextureLevelParameterfvEXT)\
+STUB_VERBOSE(glGetTextureLevelParameterivEXT)\
+STUB_VERBOSE(glTextureImage3DEXT)\
+STUB_VERBOSE(glTextureSubImage3DEXT)\
+STUB_VERBOSE(glCopyTextureSubImage3DEXT)\
+STUB_VERBOSE(glBindMultiTextureEXT)\
+STUB_VERBOSE(glMultiTexCoordPointerEXT)\
+STUB_VERBOSE(glMultiTexEnvfEXT)\
+STUB_VERBOSE(glMultiTexEnvfvEXT)\
+STUB_VERBOSE(glMultiTexEnviEXT)\
+STUB_VERBOSE(glMultiTexEnvivEXT)\
+STUB_VERBOSE(glMultiTexGendEXT)\
+STUB_VERBOSE(glMultiTexGendvEXT)\
+STUB_VERBOSE(glMultiTexGenfEXT)\
+STUB_VERBOSE(glMultiTexGenfvEXT)\
+STUB_VERBOSE(glMultiTexGeniEXT)\
+STUB_VERBOSE(glMultiTexGenivEXT)\
+STUB_VERBOSE(glGetMultiTexEnvfvEXT)\
+STUB_VERBOSE(glGetMultiTexEnvivEXT)\
+STUB_VERBOSE(glGetMultiTexGendvEXT)\
+STUB_VERBOSE(glGetMultiTexGenfvEXT)\
+STUB_VERBOSE(glGetMultiTexGenivEXT)\
+STUB_VERBOSE(glMultiTexParameteriEXT)\
+STUB_VERBOSE(glMultiTexParameterivEXT)\
+STUB_VERBOSE(glMultiTexParameterfEXT)\
+STUB_VERBOSE(glMultiTexParameterfvEXT)\
+STUB_VERBOSE(glMultiTexImage1DEXT)\
+STUB_VERBOSE(glMultiTexImage2DEXT)\
+STUB_VERBOSE(glMultiTexSubImage1DEXT)\
+STUB_VERBOSE(glMultiTexSubImage2DEXT)\
+STUB_VERBOSE(glCopyMultiTexImage1DEXT)\
+STUB_VERBOSE(glCopyMultiTexImage2DEXT)\
+STUB_VERBOSE(glCopyMultiTexSubImage1DEXT)\
+STUB_VERBOSE(glCopyMultiTexSubImage2DEXT)\
+STUB_VERBOSE(glGetMultiTexImageEXT)\
+STUB_VERBOSE(glGetMultiTexParameterfvEXT)\
+STUB_VERBOSE(glGetMultiTexParameterivEXT)\
+STUB_VERBOSE(glGetMultiTexLevelParameterfvEXT)\
+STUB_VERBOSE(glGetMultiTexLevelParameterivEXT)\
+STUB_VERBOSE(glMultiTexImage3DEXT)\
+STUB_VERBOSE(glMultiTexSubImage3DEXT)\
+STUB_VERBOSE(glCopyMultiTexSubImage3DEXT)\
+STUB_VERBOSE(glEnableClientStateIndexedEXT)\
+STUB_VERBOSE(glDisableClientStateIndexedEXT)\
+STUB_VERBOSE(glGetFloatIndexedvEXT)\
+STUB_VERBOSE(glGetDoubleIndexedvEXT)\
+STUB_VERBOSE(glGetPointerIndexedvEXT)\
+STUB_VERBOSE(glEnableIndexedEXT)\
+STUB_VERBOSE(glDisableIndexedEXT)\
+STUB_VERBOSE(glIsEnabledIndexedEXT)\
+STUB_VERBOSE(glGetIntegerIndexedvEXT)\
+STUB_VERBOSE(glGetBooleanIndexedvEXT)\
+STUB_VERBOSE(glNamedProgramStringEXT)\
+STUB_VERBOSE(glNamedProgramLocalParameter4dEXT)\
+STUB_VERBOSE(glNamedProgramLocalParameter4dvEXT)\
+STUB_VERBOSE(glNamedProgramLocalParameter4fEXT)\
+STUB_VERBOSE(glNamedProgramLocalParameter4fvEXT)\
+STUB_VERBOSE(glGetNamedProgramLocalParameterdvEXT)\
+STUB_VERBOSE(glGetNamedProgramLocalParameterfvEXT)\
+STUB_VERBOSE(glGetNamedProgramivEXT)\
+STUB_VERBOSE(glGetNamedProgramStringEXT)\
+STUB_VERBOSE(glCompressedTextureImage3DEXT)\
+STUB_VERBOSE(glCompressedTextureImage2DEXT)\
+STUB_VERBOSE(glCompressedTextureImage1DEXT)\
+STUB_VERBOSE(glCompressedTextureSubImage3DEXT)\
+STUB_VERBOSE(glCompressedTextureSubImage2DEXT)\
+STUB_VERBOSE(glCompressedTextureSubImage1DEXT)\
+STUB_VERBOSE(glGetCompressedTextureImageEXT)\
+STUB_VERBOSE(glCompressedMultiTexImage3DEXT)\
+STUB_VERBOSE(glCompressedMultiTexImage2DEXT)\
+STUB_VERBOSE(glCompressedMultiTexImage1DEXT)\
+STUB_VERBOSE(glCompressedMultiTexSubImage3DEXT)\
+STUB_VERBOSE(glCompressedMultiTexSubImage2DEXT)\
+STUB_VERBOSE(glCompressedMultiTexSubImage1DEXT)\
+STUB_VERBOSE(glGetCompressedMultiTexImageEXT)\
+STUB_VERBOSE(glMatrixLoadTransposefEXT)\
+STUB_VERBOSE(glMatrixLoadTransposedEXT)\
+STUB_VERBOSE(glMatrixMultTransposefEXT)\
+STUB_VERBOSE(glMatrixMultTransposedEXT)\
+STUB_VERBOSE(glNamedBufferDataEXT)\
+STUB_VERBOSE(glNamedBufferSubDataEXT)\
+STUB_VERBOSE(glMapNamedBufferEXT)\
+STUB_VERBOSE(glUnmapNamedBufferEXT)\
+STUB_VERBOSE(glGetNamedBufferParameterivEXT)\
+STUB_VERBOSE(glGetNamedBufferSubDataEXT)\
+STUB_VERBOSE(glProgramUniform1fEXT)\
+STUB_VERBOSE(glProgramUniform2fEXT)\
+STUB_VERBOSE(glProgramUniform3fEXT)\
+STUB_VERBOSE(glProgramUniform4fEXT)\
+STUB_VERBOSE(glProgramUniform1iEXT)\
+STUB_VERBOSE(glProgramUniform2iEXT)\
+STUB_VERBOSE(glProgramUniform3iEXT)\
+STUB_VERBOSE(glProgramUniform4iEXT)\
+STUB_VERBOSE(glProgramUniform1fvEXT)\
+STUB_VERBOSE(glProgramUniform2fvEXT)\
+STUB_VERBOSE(glProgramUniform3fvEXT)\
+STUB_VERBOSE(glProgramUniform4fvEXT)\
+STUB_VERBOSE(glProgramUniform1ivEXT)\
+STUB_VERBOSE(glProgramUniform2ivEXT)\
+STUB_VERBOSE(glProgramUniform3ivEXT)\
+STUB_VERBOSE(glProgramUniform4ivEXT)\
+STUB_VERBOSE(glProgramUniformMatrix2fvEXT)\
+STUB_VERBOSE(glProgramUniformMatrix3fvEXT)\
+STUB_VERBOSE(glProgramUniformMatrix4fvEXT)\
+STUB_VERBOSE(glProgramUniformMatrix2x3fvEXT)\
+STUB_VERBOSE(glProgramUniformMatrix3x2fvEXT)\
+STUB_VERBOSE(glProgramUniformMatrix2x4fvEXT)\
+STUB_VERBOSE(glProgramUniformMatrix4x2fvEXT)\
+STUB_VERBOSE(glProgramUniformMatrix3x4fvEXT)\
+STUB_VERBOSE(glProgramUniformMatrix4x3fvEXT)\
+STUB_VERBOSE(glTextureBufferEXT)\
+STUB_VERBOSE(glMultiTexBufferEXT)\
+STUB_VERBOSE(glTextureParameterIivEXT)\
+STUB_VERBOSE(glTextureParameterIuivEXT)\
+STUB_VERBOSE(glGetTextureParameterIivEXT)\
+STUB_VERBOSE(glGetTextureParameterIuivEXT)\
+STUB_VERBOSE(glMultiTexParameterIivEXT)\
+STUB_VERBOSE(glMultiTexParameterIuivEXT)\
+STUB_VERBOSE(glGetMultiTexParameterIivEXT)\
+STUB_VERBOSE(glGetMultiTexParameterIuivEXT)\
+STUB_VERBOSE(glProgramUniform1uiEXT)\
+STUB_VERBOSE(glProgramUniform2uiEXT)\
+STUB_VERBOSE(glProgramUniform3uiEXT)\
+STUB_VERBOSE(glProgramUniform4uiEXT)\
+STUB_VERBOSE(glProgramUniform1uivEXT)\
+STUB_VERBOSE(glProgramUniform2uivEXT)\
+STUB_VERBOSE(glProgramUniform3uivEXT)\
+STUB_VERBOSE(glProgramUniform4uivEXT)\
+STUB_VERBOSE(glNamedProgramLocalParameters4fvEXT)\
+STUB_VERBOSE(glNamedProgramLocalParameterI4iEXT)\
+STUB_VERBOSE(glNamedProgramLocalParameterI4ivEXT)\
+STUB_VERBOSE(glNamedProgramLocalParametersI4ivEXT)\
+STUB_VERBOSE(glNamedProgramLocalParameterI4uiEXT)\
+STUB_VERBOSE(glNamedProgramLocalParameterI4uivEXT)\
+STUB_VERBOSE(glNamedProgramLocalParametersI4uivEXT)\
+STUB_VERBOSE(glGetNamedProgramLocalParameterIivEXT)\
+STUB_VERBOSE(glGetNamedProgramLocalParameterIuivEXT)\
+STUB_VERBOSE(glNamedRenderbufferStorageEXT)\
+STUB_VERBOSE(glGetNamedRenderbufferParameterivEXT)\
+STUB_VERBOSE(glNamedRenderbufferStorageMultisampleEXT)\
+STUB_VERBOSE(glNamedRenderbufferStorageMultisampleCoverageEXT)\
+STUB_VERBOSE(glCheckNamedFramebufferStatusEXT)\
+STUB_VERBOSE(glNamedFramebufferTexture1DEXT)\
+STUB_VERBOSE(glNamedFramebufferTexture2DEXT)\
+STUB_VERBOSE(glNamedFramebufferTexture3DEXT)\
+STUB_VERBOSE(glNamedFramebufferRenderbufferEXT)\
+STUB_VERBOSE(glGetNamedFramebufferAttachmentParameterivEXT)\
+STUB_VERBOSE(glGenerateTextureMipmapEXT)\
+STUB_VERBOSE(glGenerateMultiTexMipmapEXT)\
+STUB_VERBOSE(glFramebufferDrawBufferEXT)\
+STUB_VERBOSE(glFramebufferDrawBuffersEXT)\
+STUB_VERBOSE(glFramebufferReadBufferEXT)\
+STUB_VERBOSE(glGetFramebufferParameterivEXT)\
+STUB_VERBOSE(glNamedCopyBufferSubDataEXT)\
+STUB_VERBOSE(glNamedFramebufferTextureEXT)\
+STUB_VERBOSE(glNamedFramebufferTextureLayerEXT)\
+STUB_VERBOSE(glNamedFramebufferTextureFaceEXT)\
+STUB_VERBOSE(glTextureRenderbufferEXT)\
+STUB_VERBOSE(glMultiTexRenderbufferEXT)\
+STUB_VERBOSE(glVertexArrayVertexOffsetEXT)\
+STUB_VERBOSE(glVertexArrayColorOffsetEXT)\
+STUB_VERBOSE(glVertexArrayEdgeFlagOffsetEXT)\
+STUB_VERBOSE(glVertexArrayIndexOffsetEXT)\
+STUB_VERBOSE(glVertexArrayNormalOffsetEXT)\
+STUB_VERBOSE(glVertexArrayTexCoordOffsetEXT)\
+STUB_VERBOSE(glVertexArrayMultiTexCoordOffsetEXT)\
+STUB_VERBOSE(glVertexArrayFogCoordOffsetEXT)\
+STUB_VERBOSE(glVertexArraySecondaryColorOffsetEXT)\
+STUB_VERBOSE(glVertexArrayVertexAttribOffsetEXT)\
+STUB_VERBOSE(glVertexArrayVertexAttribIOffsetEXT)\
+STUB_VERBOSE(glEnableVertexArrayEXT)\
+STUB_VERBOSE(glDisableVertexArrayEXT)\
+STUB_VERBOSE(glEnableVertexArrayAttribEXT)\
+STUB_VERBOSE(glDisableVertexArrayAttribEXT)\
+STUB_VERBOSE(glGetVertexArrayIntegervEXT)\
+STUB_VERBOSE(glGetVertexArrayPointervEXT)\
+STUB_VERBOSE(glGetVertexArrayIntegeri_vEXT)\
+STUB_VERBOSE(glGetVertexArrayPointeri_vEXT)\
+STUB_VERBOSE(glMapNamedBufferRangeEXT)\
+STUB_VERBOSE(glFlushMappedNamedBufferRangeEXT)\
+STUB_VERBOSE(glColorMaskIndexedEXT)\
+STUB_VERBOSE(glDrawArraysInstancedEXT)\
+STUB_VERBOSE(glDrawElementsInstancedEXT)\
+STUB_VERBOSE(glEGLImageTargetTexStorageEXT)\
+STUB_VERBOSE(glEGLImageTargetTextureStorageEXT)\
+STUB_VERBOSE(glBufferStorageExternalEXT)\
+STUB_VERBOSE(glNamedBufferStorageExternalEXT)\
+STUB_VERBOSE(glBlitFramebufferEXT)\
+STUB_VERBOSE(glRenderbufferStorageMultisampleEXT)\
+STUB_VERBOSE(glIsRenderbufferEXT)\
+STUB_VERBOSE(glBindRenderbufferEXT)\
+STUB_VERBOSE(glDeleteRenderbuffersEXT)\
+STUB_VERBOSE(glGenRenderbuffersEXT)\
+STUB_VERBOSE(glRenderbufferStorageEXT)\
+STUB_VERBOSE(glGetRenderbufferParameterivEXT)\
+STUB_VERBOSE(glIsFramebufferEXT)\
+STUB_VERBOSE(glBindFramebufferEXT)\
+STUB_VERBOSE(glDeleteFramebuffersEXT)\
+STUB_VERBOSE(glGenFramebuffersEXT)\
+STUB_VERBOSE(glCheckFramebufferStatusEXT)\
+STUB_VERBOSE(glFramebufferTexture1DEXT)\
+STUB_VERBOSE(glFramebufferTexture2DEXT)\
+STUB_VERBOSE(glFramebufferTexture3DEXT)\
+STUB_VERBOSE(glFramebufferRenderbufferEXT)\
+STUB_VERBOSE(glGetFramebufferAttachmentParameterivEXT)\
+STUB_VERBOSE(glGenerateMipmapEXT)\
+STUB_VERBOSE(glProgramParameteriEXT)\
+STUB_VERBOSE(glFramebufferTextureEXT)\
+STUB_VERBOSE(glFramebufferTextureLayerEXT)\
+STUB_VERBOSE(glFramebufferTextureFaceEXT)\
+STUB_VERBOSE(glProgramEnvParameters4fvEXT)\
+STUB_VERBOSE(glProgramLocalParameters4fvEXT)\
+STUB_VERBOSE(glVertexAttribI1iEXT)\
+STUB_VERBOSE(glVertexAttribI2iEXT)\
+STUB_VERBOSE(glVertexAttribI3iEXT)\
+STUB_VERBOSE(glVertexAttribI4iEXT)\
+STUB_VERBOSE(glVertexAttribI1uiEXT)\
+STUB_VERBOSE(glVertexAttribI2uiEXT)\
+STUB_VERBOSE(glVertexAttribI3uiEXT)\
+STUB_VERBOSE(glVertexAttribI4uiEXT)\
+STUB_VERBOSE(glVertexAttribI1ivEXT)\
+STUB_VERBOSE(glVertexAttribI2ivEXT)\
+STUB_VERBOSE(glVertexAttribI3ivEXT)\
+STUB_VERBOSE(glVertexAttribI4ivEXT)\
+STUB_VERBOSE(glVertexAttribI1uivEXT)\
+STUB_VERBOSE(glVertexAttribI2uivEXT)\
+STUB_VERBOSE(glVertexAttribI3uivEXT)\
+STUB_VERBOSE(glVertexAttribI4uivEXT)\
+STUB_VERBOSE(glVertexAttribI4bvEXT)\
+STUB_VERBOSE(glVertexAttribI4svEXT)\
+STUB_VERBOSE(glVertexAttribI4ubvEXT)\
+STUB_VERBOSE(glVertexAttribI4usvEXT)\
+STUB_VERBOSE(glVertexAttribIPointerEXT)\
+STUB_VERBOSE(glGetVertexAttribIivEXT)\
+STUB_VERBOSE(glGetVertexAttribIuivEXT)\
+STUB_VERBOSE(glGetUniformuivEXT)\
+STUB_VERBOSE(glBindFragDataLocationEXT)\
+STUB_VERBOSE(glGetFragDataLocationEXT)\
+STUB_VERBOSE(glUniform1uiEXT)\
+STUB_VERBOSE(glUniform2uiEXT)\
+STUB_VERBOSE(glUniform3uiEXT)\
+STUB_VERBOSE(glUniform4uiEXT)\
+STUB_VERBOSE(glUniform1uivEXT)\
+STUB_VERBOSE(glUniform2uivEXT)\
+STUB_VERBOSE(glUniform3uivEXT)\
+STUB_VERBOSE(glUniform4uivEXT)\
+STUB_VERBOSE(glGetUnsignedBytevEXT)\
+STUB_VERBOSE(glGetUnsignedBytei_vEXT)\
+STUB_VERBOSE(glDeleteMemoryObjectsEXT)\
+STUB_VERBOSE(glIsMemoryObjectEXT)\
+STUB_VERBOSE(glCreateMemoryObjectsEXT)\
+STUB_VERBOSE(glMemoryObjectParameterivEXT)\
+STUB_VERBOSE(glGetMemoryObjectParameterivEXT)\
+STUB_VERBOSE(glTexStorageMem2DEXT)\
+STUB_VERBOSE(glTexStorageMem2DMultisampleEXT)\
+STUB_VERBOSE(glTexStorageMem3DEXT)\
+STUB_VERBOSE(glTexStorageMem3DMultisampleEXT)\
+STUB_VERBOSE(glBufferStorageMemEXT)\
+STUB_VERBOSE(glTextureStorageMem2DEXT)\
+STUB_VERBOSE(glTextureStorageMem2DMultisampleEXT)\
+STUB_VERBOSE(glTextureStorageMem3DEXT)\
+STUB_VERBOSE(glTextureStorageMem3DMultisampleEXT)\
+STUB_VERBOSE(glNamedBufferStorageMemEXT)\
+STUB_VERBOSE(glTexStorageMem1DEXT)\
+STUB_VERBOSE(glTextureStorageMem1DEXT)\
+STUB_VERBOSE(glImportMemoryFdEXT)\
+STUB_VERBOSE(glImportMemoryWin32HandleEXT)\
+STUB_VERBOSE(glImportMemoryWin32NameEXT)\
+STUB_VERBOSE(glPointParameterfEXT)\
+STUB_VERBOSE(glPointParameterfvEXT)\
+STUB_VERBOSE(glPolygonOffsetClampEXT)\
+STUB_VERBOSE(glProvokingVertexEXT)\
+STUB_VERBOSE(glRasterSamplesEXT)\
+STUB_VERBOSE(glSecondaryColor3bEXT)\
+STUB_VERBOSE(glSecondaryColor3sEXT)\
+STUB_VERBOSE(glSecondaryColor3iEXT)\
+STUB_VERBOSE(glSecondaryColor3fEXT)\
+STUB_VERBOSE(glSecondaryColor3dEXT)\
+STUB_VERBOSE(glSecondaryColor3ubEXT)\
+STUB_VERBOSE(glSecondaryColor3usEXT)\
+STUB_VERBOSE(glSecondaryColor3uiEXT)\
+STUB_VERBOSE(glSecondaryColor3bvEXT)\
+STUB_VERBOSE(glSecondaryColor3svEXT)\
+STUB_VERBOSE(glSecondaryColor3ivEXT)\
+STUB_VERBOSE(glSecondaryColor3fvEXT)\
+STUB_VERBOSE(glSecondaryColor3dvEXT)\
+STUB_VERBOSE(glSecondaryColor3ubvEXT)\
+STUB_VERBOSE(glSecondaryColor3usvEXT)\
+STUB_VERBOSE(glSecondaryColor3uivEXT)\
+STUB_VERBOSE(glSecondaryColorPointerEXT)\
+STUB_VERBOSE(glGenSemaphoresEXT)\
+STUB_VERBOSE(glDeleteSemaphoresEXT)\
+STUB_VERBOSE(glIsSemaphoreEXT)\
+STUB_VERBOSE(glSemaphoreParameterui64vEXT)\
+STUB_VERBOSE(glGetSemaphoreParameterui64vEXT)\
+STUB_VERBOSE(glWaitSemaphoreEXT)\
+STUB_VERBOSE(glSignalSemaphoreEXT)\
+STUB_VERBOSE(glImportSemaphoreFdEXT)\
+STUB_VERBOSE(glImportSemaphoreWin32HandleEXT)\
+STUB_VERBOSE(glImportSemaphoreWin32NameEXT)\
+STUB_VERBOSE(glUseShaderProgramEXT)\
+STUB_VERBOSE(glActiveProgramEXT)\
+STUB_VERBOSE(glCreateShaderProgramEXT)\
+STUB_VERBOSE(glFramebufferFetchBarrierEXT)\
+STUB_VERBOSE(glBindImageTextureEXT)\
+STUB_VERBOSE(glMemoryBarrierEXT)\
+STUB_VERBOSE(glStencilClearTagEXT)\
+STUB_VERBOSE(glActiveStencilFaceEXT)\
+STUB_VERBOSE(glTexBufferEXT)\
+STUB_VERBOSE(glClearColorIiEXT)\
+STUB_VERBOSE(glClearColorIuiEXT)\
+STUB_VERBOSE(glTexParameterIivEXT)\
+STUB_VERBOSE(glTexParameterIuivEXT)\
+STUB_VERBOSE(glGetTexParameterIivEXT)\
+STUB_VERBOSE(glGetTexParameterIuivEXT)\
+STUB_VERBOSE(glTexStorage1DEXT)\
+STUB_VERBOSE(glTexStorage2DEXT)\
+STUB_VERBOSE(glTexStorage3DEXT)\
+STUB_VERBOSE(glGetQueryObjecti64vEXT)\
+STUB_VERBOSE(glGetQueryObjectui64vEXT)\
+STUB_VERBOSE(glBindBufferRangeEXT)\
+STUB_VERBOSE(glBindBufferOffsetEXT)\
+STUB_VERBOSE(glBindBufferBaseEXT)\
+STUB_VERBOSE(glBeginTransformFeedbackEXT)\
+STUB_VERBOSE(glEndTransformFeedbackEXT)\
+STUB_VERBOSE(glTransformFeedbackVaryingsEXT)\
+STUB_VERBOSE(glGetTransformFeedbackVaryingEXT)\
+STUB_VERBOSE(glVertexAttribL1dEXT)\
+STUB_VERBOSE(glVertexAttribL2dEXT)\
+STUB_VERBOSE(glVertexAttribL3dEXT)\
+STUB_VERBOSE(glVertexAttribL4dEXT)\
+STUB_VERBOSE(glVertexAttribL1dvEXT)\
+STUB_VERBOSE(glVertexAttribL2dvEXT)\
+STUB_VERBOSE(glVertexAttribL3dvEXT)\
+STUB_VERBOSE(glVertexAttribL4dvEXT)\
+STUB_VERBOSE(glVertexAttribLPointerEXT)\
+STUB_VERBOSE(glGetVertexAttribLdvEXT)\
+STUB_VERBOSE(glAcquireKeyedMutexWin32EXT)\
+STUB_VERBOSE(glReleaseKeyedMutexWin32EXT)\
+STUB_VERBOSE(glWindowRectanglesEXT)\
+STUB_VERBOSE(glImportSyncEXT)\
+STUB_VERBOSE(glFrameTerminatorGREMEDY)\
+STUB_VERBOSE(glStringMarkerGREMEDY)\
+STUB_VERBOSE(glApplyFramebufferAttachmentCMAAINTEL)\
+STUB_VERBOSE(glSyncTextureINTEL)\
+STUB_VERBOSE(glUnmapTexture2DINTEL)\
+STUB_VERBOSE(glMapTexture2DINTEL)\
+STUB_VERBOSE(glBeginPerfQueryINTEL)\
+STUB_VERBOSE(glCreatePerfQueryINTEL)\
+STUB_VERBOSE(glDeletePerfQueryINTEL)\
+STUB_VERBOSE(glEndPerfQueryINTEL)\
+STUB_VERBOSE(glGetFirstPerfQueryIdINTEL)\
+STUB_VERBOSE(glGetNextPerfQueryIdINTEL)\
+STUB_VERBOSE(glGetPerfCounterInfoINTEL)\
+STUB_VERBOSE(glGetPerfQueryDataINTEL)\
+STUB_VERBOSE(glGetPerfQueryIdByNameINTEL)\
+STUB_VERBOSE(glGetPerfQueryInfoINTEL)\
+STUB_VERBOSE(glBlendBarrierKHR)\
+STUB_VERBOSE(glMaxShaderCompilerThreadsKHR)\
+STUB_VERBOSE(glFramebufferParameteriMESA)\
+STUB_VERBOSE(glGetFramebufferParameterivMESA)\
+STUB_VERBOSE(glAlphaToCoverageDitherControlNV)\
+STUB_VERBOSE(glMultiDrawArraysIndirectBindlessNV)\
+STUB_VERBOSE(glMultiDrawElementsIndirectBindlessNV)\
+STUB_VERBOSE(glMultiDrawArraysIndirectBindlessCountNV)\
+STUB_VERBOSE(glMultiDrawElementsIndirectBindlessCountNV)\
+STUB_VERBOSE(glGetTextureHandleNV)\
+STUB_VERBOSE(glGetTextureSamplerHandleNV)\
+STUB_VERBOSE(glMakeTextureHandleResidentNV)\
+STUB_VERBOSE(glMakeTextureHandleNonResidentNV)\
+STUB_VERBOSE(glGetImageHandleNV)\
+STUB_VERBOSE(glMakeImageHandleResidentNV)\
+STUB_VERBOSE(glMakeImageHandleNonResidentNV)\
+STUB_VERBOSE(glUniformHandleui64NV)\
+STUB_VERBOSE(glUniformHandleui64vNV)\
+STUB_VERBOSE(glProgramUniformHandleui64NV)\
+STUB_VERBOSE(glProgramUniformHandleui64vNV)\
+STUB_VERBOSE(glIsTextureHandleResidentNV)\
+STUB_VERBOSE(glIsImageHandleResidentNV)\
+STUB_VERBOSE(glBlendParameteriNV)\
+STUB_VERBOSE(glBlendBarrierNV)\
+STUB_VERBOSE(glViewportPositionWScaleNV)\
+STUB_VERBOSE(glCreateStatesNV)\
+STUB_VERBOSE(glDeleteStatesNV)\
+STUB_VERBOSE(glIsStateNV)\
+STUB_VERBOSE(glStateCaptureNV)\
+STUB_VERBOSE(glGetCommandHeaderNV)\
+STUB_VERBOSE(glGetStageIndexNV)\
+STUB_VERBOSE(glDrawCommandsNV)\
+STUB_VERBOSE(glDrawCommandsAddressNV)\
+STUB_VERBOSE(glDrawCommandsStatesNV)\
+STUB_VERBOSE(glDrawCommandsStatesAddressNV)\
+STUB_VERBOSE(glCreateCommandListsNV)\
+STUB_VERBOSE(glDeleteCommandListsNV)\
+STUB_VERBOSE(glIsCommandListNV)\
+STUB_VERBOSE(glListDrawCommandsStatesClientNV)\
+STUB_VERBOSE(glCommandListSegmentsNV)\
+STUB_VERBOSE(glCompileCommandListNV)\
+STUB_VERBOSE(glCallCommandListNV)\
+STUB_VERBOSE(glBeginConditionalRenderNV)\
+STUB_VERBOSE(glEndConditionalRenderNV)\
+STUB_VERBOSE(glSubpixelPrecisionBiasNV)\
+STUB_VERBOSE(glConservativeRasterParameterfNV)\
+STUB_VERBOSE(glConservativeRasterParameteriNV)\
+STUB_VERBOSE(glCopyImageSubDataNV)\
+STUB_VERBOSE(glDepthRangedNV)\
+STUB_VERBOSE(glClearDepthdNV)\
+STUB_VERBOSE(glDepthBoundsdNV)\
+STUB_VERBOSE(glDrawTextureNV)\
+STUB_VERBOSE(glDrawVkImageNV)\
+STUB_VERBOSE(glGetVkProcAddrNV)\
+STUB_VERBOSE(glWaitVkSemaphoreNV)\
+STUB_VERBOSE(glSignalVkSemaphoreNV)\
+STUB_VERBOSE(glSignalVkFenceNV)\
+STUB_VERBOSE(glGetMultisamplefvNV)\
+STUB_VERBOSE(glSampleMaskIndexedNV)\
+STUB_VERBOSE(glTexRenderbufferNV)\
+STUB_VERBOSE(glDeleteFencesNV)\
+STUB_VERBOSE(glGenFencesNV)\
+STUB_VERBOSE(glIsFenceNV)\
+STUB_VERBOSE(glTestFenceNV)\
+STUB_VERBOSE(glGetFenceivNV)\
+STUB_VERBOSE(glFinishFenceNV)\
+STUB_VERBOSE(glSetFenceNV)\
+STUB_VERBOSE(glFragmentCoverageColorNV)\
+STUB_VERBOSE(glCoverageModulationTableNV)\
+STUB_VERBOSE(glGetCoverageModulationTableNV)\
+STUB_VERBOSE(glCoverageModulationNV)\
+STUB_VERBOSE(glRenderbufferStorageMultisampleCoverageNV)\
+STUB_VERBOSE(glRenderGpuMaskNV)\
+STUB_VERBOSE(glMulticastBufferSubDataNV)\
+STUB_VERBOSE(glMulticastCopyBufferSubDataNV)\
+STUB_VERBOSE(glMulticastCopyImageSubDataNV)\
+STUB_VERBOSE(glMulticastBlitFramebufferNV)\
+STUB_VERBOSE(glMulticastFramebufferSampleLocationsfvNV)\
+STUB_VERBOSE(glMulticastBarrierNV)\
+STUB_VERBOSE(glMulticastWaitSyncNV)\
+STUB_VERBOSE(glMulticastGetQueryObjectivNV)\
+STUB_VERBOSE(glMulticastGetQueryObjectuivNV)\
+STUB_VERBOSE(glMulticastGetQueryObjecti64vNV)\
+STUB_VERBOSE(glMulticastGetQueryObjectui64vNV)\
+STUB_VERBOSE(glVertex2hNV)\
+STUB_VERBOSE(glVertex2hvNV)\
+STUB_VERBOSE(glVertex3hNV)\
+STUB_VERBOSE(glVertex3hvNV)\
+STUB_VERBOSE(glVertex4hNV)\
+STUB_VERBOSE(glVertex4hvNV)\
+STUB_VERBOSE(glNormal3hNV)\
+STUB_VERBOSE(glNormal3hvNV)\
+STUB_VERBOSE(glColor3hNV)\
+STUB_VERBOSE(glColor3hvNV)\
+STUB_VERBOSE(glColor4hNV)\
+STUB_VERBOSE(glColor4hvNV)\
+STUB_VERBOSE(glTexCoord1hNV)\
+STUB_VERBOSE(glTexCoord1hvNV)\
+STUB_VERBOSE(glTexCoord2hNV)\
+STUB_VERBOSE(glTexCoord2hvNV)\
+STUB_VERBOSE(glTexCoord3hNV)\
+STUB_VERBOSE(glTexCoord3hvNV)\
+STUB_VERBOSE(glTexCoord4hNV)\
+STUB_VERBOSE(glTexCoord4hvNV)\
+STUB_VERBOSE(glMultiTexCoord1hNV)\
+STUB_VERBOSE(glMultiTexCoord1hvNV)\
+STUB_VERBOSE(glMultiTexCoord2hNV)\
+STUB_VERBOSE(glMultiTexCoord2hvNV)\
+STUB_VERBOSE(glMultiTexCoord3hNV)\
+STUB_VERBOSE(glMultiTexCoord3hvNV)\
+STUB_VERBOSE(glMultiTexCoord4hNV)\
+STUB_VERBOSE(glMultiTexCoord4hvNV)\
+STUB_VERBOSE(glFogCoordhNV)\
+STUB_VERBOSE(glFogCoordhvNV)\
+STUB_VERBOSE(glSecondaryColor3hNV)\
+STUB_VERBOSE(glSecondaryColor3hvNV)\
+STUB_VERBOSE(glVertexWeighthNV)\
+STUB_VERBOSE(glVertexWeighthvNV)\
+STUB_VERBOSE(glVertexAttrib1hNV)\
+STUB_VERBOSE(glVertexAttrib1hvNV)\
+STUB_VERBOSE(glVertexAttrib2hNV)\
+STUB_VERBOSE(glVertexAttrib2hvNV)\
+STUB_VERBOSE(glVertexAttrib3hNV)\
+STUB_VERBOSE(glVertexAttrib3hvNV)\
+STUB_VERBOSE(glVertexAttrib4hNV)\
+STUB_VERBOSE(glVertexAttrib4hvNV)\
+STUB_VERBOSE(glVertexAttribs1hvNV)\
+STUB_VERBOSE(glVertexAttribs2hvNV)\
+STUB_VERBOSE(glVertexAttribs3hvNV)\
+STUB_VERBOSE(glVertexAttribs4hvNV)\
+STUB_VERBOSE(glGetInternalformatSampleivNV)\
+STUB_VERBOSE(glGetMemoryObjectDetachedResourcesuivNV)\
+STUB_VERBOSE(glResetMemoryObjectParameterNV)\
+STUB_VERBOSE(glTexAttachMemoryNV)\
+STUB_VERBOSE(glBufferAttachMemoryNV)\
+STUB_VERBOSE(glTextureAttachMemoryNV)\
+STUB_VERBOSE(glNamedBufferAttachMemoryNV)\
+STUB_VERBOSE(glBufferPageCommitmentMemNV)\
+STUB_VERBOSE(glNamedBufferPageCommitmentMemNV)\
+STUB_VERBOSE(glTexPageCommitmentMemNV)\
+STUB_VERBOSE(glTexturePageCommitmentMemNV)\
+STUB_VERBOSE(glDrawMeshTasksNV)\
+STUB_VERBOSE(glDrawMeshTasksIndirectNV)\
+STUB_VERBOSE(glMultiDrawMeshTasksIndirectNV)\
+STUB_VERBOSE(glMultiDrawMeshTasksIndirectCountNV)\
+STUB_VERBOSE(glPathCommandsNV)\
+STUB_VERBOSE(glPathCoordsNV)\
+STUB_VERBOSE(glPathSubCommandsNV)\
+STUB_VERBOSE(glPathSubCoordsNV)\
+STUB_VERBOSE(glPathStringNV)\
+STUB_VERBOSE(glPathGlyphsNV)\
+STUB_VERBOSE(glPathGlyphRangeNV)\
+STUB_VERBOSE(glCopyPathNV)\
+STUB_VERBOSE(glInterpolatePathsNV)\
+STUB_VERBOSE(glTransformPathNV)\
+STUB_VERBOSE(glPathParameterivNV)\
+STUB_VERBOSE(glPathParameteriNV)\
+STUB_VERBOSE(glPathParameterfvNV)\
+STUB_VERBOSE(glPathParameterfNV)\
+STUB_VERBOSE(glPathDashArrayNV)\
+STUB_VERBOSE(glGenPathsNV)\
+STUB_VERBOSE(glDeletePathsNV)\
+STUB_VERBOSE(glIsPathNV)\
+STUB_VERBOSE(glPathStencilFuncNV)\
+STUB_VERBOSE(glPathStencilDepthOffsetNV)\
+STUB_VERBOSE(glStencilFillPathNV)\
+STUB_VERBOSE(glStencilStrokePathNV)\
+STUB_VERBOSE(glStencilFillPathInstancedNV)\
+STUB_VERBOSE(glStencilStrokePathInstancedNV)\
+STUB_VERBOSE(glPathCoverDepthFuncNV)\
+STUB_VERBOSE(glCoverFillPathNV)\
+STUB_VERBOSE(glCoverStrokePathNV)\
+STUB_VERBOSE(glCoverFillPathInstancedNV)\
+STUB_VERBOSE(glCoverStrokePathInstancedNV)\
+STUB_VERBOSE(glGetPathParameterivNV)\
+STUB_VERBOSE(glGetPathParameterfvNV)\
+STUB_VERBOSE(glGetPathCommandsNV)\
+STUB_VERBOSE(glGetPathCoordsNV)\
+STUB_VERBOSE(glGetPathDashArrayNV)\
+STUB_VERBOSE(glGetPathMetricsNV)\
+STUB_VERBOSE(glGetPathMetricRangeNV)\
+STUB_VERBOSE(glGetPathSpacingNV)\
+STUB_VERBOSE(glIsPointInFillPathNV)\
+STUB_VERBOSE(glIsPointInStrokePathNV)\
+STUB_VERBOSE(glGetPathLengthNV)\
+STUB_VERBOSE(glPointAlongPathNV)\
+STUB_VERBOSE(glPixelDataRangeNV)\
+STUB_VERBOSE(glFlushPixelDataRangeNV)\
+STUB_VERBOSE(glPointParameteriNV)\
+STUB_VERBOSE(glPointParameterivNV)\
+STUB_VERBOSE(glPrimitiveRestartNV)\
+STUB_VERBOSE(glPrimitiveRestartIndexNV)\
+STUB_VERBOSE(glQueryResourceNV)\
+STUB_VERBOSE(glGenQueryResourceTagNV)\
+STUB_VERBOSE(glDeleteQueryResourceTagNV)\
+STUB_VERBOSE(glQueryResourceTagNV)\
+STUB_VERBOSE(glFramebufferSampleLocationsfvNV)\
+STUB_VERBOSE(glNamedFramebufferSampleLocationsfvNV)\
+STUB_VERBOSE(glResolveDepthValuesNV)\
+STUB_VERBOSE(glScissorExclusiveArrayvNV)\
+STUB_VERBOSE(glScissorExclusiveNV)\
+STUB_VERBOSE(glMakeBufferResidentNV)\
+STUB_VERBOSE(glMakeBufferNonResidentNV)\
+STUB_VERBOSE(glIsBufferResidentNV)\
+STUB_VERBOSE(glMakeNamedBufferResidentNV)\
+STUB_VERBOSE(glMakeNamedBufferNonResidentNV)\
+STUB_VERBOSE(glIsNamedBufferResidentNV)\
+STUB_VERBOSE(glGetBufferParameterui64vNV)\
+STUB_VERBOSE(glGetNamedBufferParameterui64vNV)\
+STUB_VERBOSE(glGetIntegerui64vNV)\
+STUB_VERBOSE(glUniformui64NV)\
+STUB_VERBOSE(glUniformui64vNV)\
+STUB_VERBOSE(glProgramUniformui64NV)\
+STUB_VERBOSE(glProgramUniformui64vNV)\
+STUB_VERBOSE(glBindShadingRateImageNV)\
+STUB_VERBOSE(glShadingRateImagePaletteNV)\
+STUB_VERBOSE(glGetShadingRateImagePaletteNV)\
+STUB_VERBOSE(glShadingRateImageBarrierNV)\
+STUB_VERBOSE(glShadingRateSampleOrderNV)\
+STUB_VERBOSE(glShadingRateSampleOrderCustomNV)\
+STUB_VERBOSE(glGetShadingRateSampleLocationivNV)\
+STUB_VERBOSE(glTextureBarrierNV)\
+STUB_VERBOSE(glTexImage2DMultisampleCoverageNV)\
+STUB_VERBOSE(glTexImage3DMultisampleCoverageNV)\
+STUB_VERBOSE(glTextureImage2DMultisampleNV)\
+STUB_VERBOSE(glTextureImage3DMultisampleNV)\
+STUB_VERBOSE(glTextureImage2DMultisampleCoverageNV)\
+STUB_VERBOSE(glTextureImage3DMultisampleCoverageNV)\
+STUB_VERBOSE(glCreateSemaphoresNV)\
+STUB_VERBOSE(glSemaphoreParameterivNV)\
+STUB_VERBOSE(glGetSemaphoreParameterivNV)\
+STUB_VERBOSE(glBeginTransformFeedbackNV)\
+STUB_VERBOSE(glEndTransformFeedbackNV)\
+STUB_VERBOSE(glTransformFeedbackAttribsNV)\
+STUB_VERBOSE(glBindBufferRangeNV)\
+STUB_VERBOSE(glBindBufferOffsetNV)\
+STUB_VERBOSE(glBindBufferBaseNV)\
+STUB_VERBOSE(glTransformFeedbackVaryingsNV)\
+STUB_VERBOSE(glActiveVaryingNV)\
+STUB_VERBOSE(glGetVaryingLocationNV)\
+STUB_VERBOSE(glGetActiveVaryingNV)\
+STUB_VERBOSE(glGetTransformFeedbackVaryingNV)\
+STUB_VERBOSE(glTransformFeedbackStreamAttribsNV)\
+STUB_VERBOSE(glBindTransformFeedbackNV)\
+STUB_VERBOSE(glDeleteTransformFeedbacksNV)\
+STUB_VERBOSE(glGenTransformFeedbacksNV)\
+STUB_VERBOSE(glIsTransformFeedbackNV)\
+STUB_VERBOSE(glPauseTransformFeedbackNV)\
+STUB_VERBOSE(glResumeTransformFeedbackNV)\
+STUB_VERBOSE(glDrawTransformFeedbackNV)\
+STUB_VERBOSE(glVertexArrayRangeNV)\
+STUB_VERBOSE(glFlushVertexArrayRangeNV)\
+STUB_VERBOSE(glVertexAttribL1i64NV)\
+STUB_VERBOSE(glVertexAttribL2i64NV)\
+STUB_VERBOSE(glVertexAttribL3i64NV)\
+STUB_VERBOSE(glVertexAttribL4i64NV)\
+STUB_VERBOSE(glVertexAttribL1i64vNV)\
+STUB_VERBOSE(glVertexAttribL2i64vNV)\
+STUB_VERBOSE(glVertexAttribL3i64vNV)\
+STUB_VERBOSE(glVertexAttribL4i64vNV)\
+STUB_VERBOSE(glVertexAttribL1ui64NV)\
+STUB_VERBOSE(glVertexAttribL2ui64NV)\
+STUB_VERBOSE(glVertexAttribL3ui64NV)\
+STUB_VERBOSE(glVertexAttribL4ui64NV)\
+STUB_VERBOSE(glVertexAttribL1ui64vNV)\
+STUB_VERBOSE(glVertexAttribL2ui64vNV)\
+STUB_VERBOSE(glVertexAttribL3ui64vNV)\
+STUB_VERBOSE(glVertexAttribL4ui64vNV)\
+STUB_VERBOSE(glGetVertexAttribLi64vNV)\
+STUB_VERBOSE(glGetVertexAttribLui64vNV)\
+STUB_VERBOSE(glVertexAttribLFormatNV)\
+STUB_VERBOSE(glBufferAddressRangeNV)\
+STUB_VERBOSE(glVertexFormatNV)\
+STUB_VERBOSE(glNormalFormatNV)\
+STUB_VERBOSE(glColorFormatNV)\
+STUB_VERBOSE(glIndexFormatNV)\
+STUB_VERBOSE(glTexCoordFormatNV)\
+STUB_VERBOSE(glEdgeFlagFormatNV)\
+STUB_VERBOSE(glSecondaryColorFormatNV)\
+STUB_VERBOSE(glFogCoordFormatNV)\
+STUB_VERBOSE(glVertexAttribFormatNV)\
+STUB_VERBOSE(glVertexAttribIFormatNV)\
+STUB_VERBOSE(glGetIntegerui64i_vNV)\
+STUB_VERBOSE(glViewportSwizzleNV)\
+STUB_VERBOSE(glBeginConditionalRenderNVX)\
+STUB_VERBOSE(glEndConditionalRenderNVX)\
+STUB_VERBOSE(glAsyncCopyImageSubDataNVX)\
+STUB_VERBOSE(glAsyncCopyBufferSubDataNVX)\
+STUB_VERBOSE(glUploadGpuMaskNVX)\
+STUB_VERBOSE(glMulticastViewportArrayvNVX)\
+STUB_VERBOSE(glMulticastScissorArrayvNVX)\
+STUB_VERBOSE(glMulticastViewportPositionWScaleNVX)\
+STUB_VERBOSE(glCreateProgressFenceNVX)\
+STUB_VERBOSE(glSignalSemaphoreui64NVX)\
+STUB_VERBOSE(glWaitSemaphoreui64NVX)\
+STUB_VERBOSE(glClientWaitSemaphoreui64NVX)\
+STUB_VERBOSE(glFramebufferTextureMultiviewOVR)\
+STUB_VERBOSE(glNamedFramebufferTextureMultiviewOVR)
+ALL_FUNCTIONS;
+#undef STUB_VERBOSE
+#define STUB_VERBOSE(func_name) if (strcmp(name, #func_name) == 0) { return cobalt_Stub_##func_name; }
+
+
+
+void* COBALT_API cobalt_GetProcAddress(const char *name) {
+    DBG(printf("glGetProcAddress(\"%s\")", name);)
+    // generated gles wrappers
+    #include "glesfuncs.inc"
+
+    // GL_EXT_texture_object (yeah, super old!)
+    _EXT(glGenTextures);
+    _EXT(glBindTexture);
+    _EXT(glDeleteTextures);
+    _EXT(glIsTexture);
+    _EXT(glAreTexturesResident);
+    _EXT(glPrioritizeTextures);
+
+    // GL_EXT_polygonoffset
+    _EXT(glPolygonOffset);
+
+    // GL_ARB_vertex_buffer_object
+    _ARB(glBindBuffer);
+    _ARB(glBufferData);
+    _ARB(glBufferSubData);
+    _ARB(glDeleteBuffers);
+    _ARB(glGenBuffers);
+    _ARB(glIsBuffer);
+    _EX(glGetBufferPointerv);
+    _ARB(glGetBufferPointerv);
+    _EX(glMapBuffer);
+    _EX(glUnmapBuffer);
+    _ARB(glMapBuffer);
+    _ARB(glUnmapBuffer);
+    _ARB(glGetBufferParameteriv);
+    _EX(glGetBufferSubData);
+    _ARB(glGetBufferSubData);
+    _EX(glCopyBufferSubData);
+    _ARB(glCopyBufferSubData);
+
+    _EX(glMapBufferRange);
+    _EX(glFlushMappedBufferRange);
+    // Named Buffer
+    _EX(glNamedBufferData);
+    _EX(glNamedBufferSubData);
+    _EX(glGetNamedBufferParameteriv);
+    _EX(glMapNamedBuffer);
+    _EX(glUnmapNamedBuffer);
+    _EX(glGetNamedBufferSubData);
+    _EX(glGetNamedBufferPointerv);
+    _EXT(glNamedBufferData);
+    _EXT(glNamedBufferSubData);
+    _EXT(glGetNamedBufferParameteriv);
+    _EXT(glMapNamedBuffer);
+    _EXT(glUnmapNamedBuffer);
+    _EXT(glGetNamedBufferSubData);
+    _EXT(glGetNamedBufferPointerv);
+    // GL_ARB_vertex_array_object
+    _EX(glGenVertexArrays);
+    _EX(glBindVertexArray);
+    _EX(glDeleteVertexArrays);
+    _EX(glIsVertexArray);
+    _ARB(glGenVertexArrays);
+    _ARB(glBindVertexArray);
+    _ARB(glDeleteVertexArrays);
+    _ARB(glIsVertexArray);
+    _EXT(glGenVertexArrays);
+    _EXT(glBindVertexArray);
+    _EXT(glDeleteVertexArrays);
+    _EXT(glIsVertexArray);
+    
+    // GL_ARB_frameBuffer_ext
+    if(hardext.fbo) {
+        _EX(glFramebufferTexture1D);
+        _EX(glFramebufferTexture3D);
+        _EX(glFramebufferTextureLayer);
+        _EX(glRenderbufferStorageMultisample);
+        _EX(glBlitFramebuffer);
+        _EXT(glGenFramebuffers);
+        _EXT(glDeleteFramebuffers);
+        _EXT(glIsFramebuffer);
+        _EXT(glCheckFramebufferStatus);
+        _EXT(glBindFramebuffer);
+        _EXT(glFramebufferTexture2D);
+        _EXT(glFramebufferTexture1D);
+        _EXT(glFramebufferTexture3D);
+        _EXT(glGenRenderbuffers);
+        _EXT(glFramebufferRenderbuffer);
+        _EXT(glDeleteRenderbuffers);
+        _EXT(glRenderbufferStorage);
+        _EXT(glRenderbufferStorageMultisample);
+        _EXT(glBindRenderbuffer);
+        _EXT(glIsRenderbuffer);
+        _EXT(glGenerateMipmap);
+        _EXT(glGetFramebufferAttachmentParameteriv);
+        _EXT(glGetRenderbufferParameteriv);
+        _EXT(glFramebufferTextureLayer);
+        _EXT(glBlitFramebuffer);
+        _ARB(glGenFramebuffers);
+        _ARB(glDeleteFramebuffers);
+        _ARB(glIsFramebuffer);
+        _ARB(glCheckFramebufferStatus);
+        _ARB(glBindFramebuffer);
+        _ARB(glFramebufferTexture2D);
+        _ARB(glFramebufferTexture1D);
+        _ARB(glFramebufferTexture3D);
+        _ARB(glGenRenderbuffers);
+        _ARB(glFramebufferRenderbuffer);
+        _ARB(glDeleteRenderbuffers);
+        _ARB(glRenderbufferStorage);
+        _ARB(glRenderbufferStorageMultisample);
+        _ARB(glBindRenderbuffer);
+        _ARB(glIsRenderbuffer);
+        _ARB(glGenerateMipmap);
+        _ARB(glGetFramebufferAttachmentParameteriv);
+        _ARB(glGetRenderbufferParameteriv);
+        _ARB(glFramebufferTextureLayer);
+        _ARB(glBlitFramebuffer);
+        _EX(glDrawBuffers);
+        _ARB(glDrawBuffers);
+        _EX(glClearBufferiv);
+        _EX(glClearBufferuiv);
+        _EX(glClearBufferfv);
+        _EX(glClearBufferfi);
+        _EX(glClearNamedFramebufferiv)
+        _EX(glClearNamedFramebufferuiv)
+        _EX(glClearNamedFramebufferfv)
+        _EX(glClearNamedFramebufferfi)
+        _EXT(glClearNamedFramebufferiv)
+        _EXT(glClearNamedFramebufferuiv)
+        _EXT(glClearNamedFramebufferfv)
+        _EXT(glClearNamedFramebufferfi)
+
+        // draw_buffer_2 (partial)
+        _EXT(glColorMaskIndexed)
+    }
+    
+    // GL_EXT_vertex_array
+    _EXT(glArrayElement);
+    _EXT(glDrawArrays);
+    _EXT(glVertexPointer);
+    _EXT(glNormalPointer);
+    _EXT(glColorPointer);
+    _EX(glIndexPointer);    //TODO, stub for now
+    _EXT(glIndexPointer);
+    _EXT(glTexCoordPointer);
+    _EX(glEdgeFlagPointer); //TODO, stub for now
+    _EXT(glEdgeFlagPointer);
+    _EX(glGetPointerv);
+    _EXT(glGetPointerv);
+
+
+    // OES wrapper
+    EX(glClearDepthfOES);
+    EX(glClipPlanefOES);
+    EX(glDepthRangefOES);
+    EX(glFrustumfOES);
+    EX(glGetClipPlanefOES);
+    EX(glOrthofOES);
+
+    // passthrough
+    // batch thunking!
+    #define THUNK(suffix, type)       \
+    _EX(glColor3##suffix##v);          \
+    _EX(glColor3##suffix);             \
+    _EX(glColor4##suffix##v);          \
+    _EX(glColor4##suffix);             \
+    _EX(glSecondaryColor3##suffix##v); \
+    _EX(glSecondaryColor3##suffix);    \
+    _EXT(glSecondaryColor3##suffix##v); \
+    _EXT(glSecondaryColor3##suffix);    \
+    _EX(glIndex##suffix##v);           \
+    _EX(glIndex##suffix);              \
+    _EX(glNormal3##suffix##v);         \
+    _EX(glNormal3##suffix);            \
+    _EX(glRasterPos2##suffix##v);      \
+    _EX(glRasterPos2##suffix);         \
+    _EX(glRasterPos3##suffix##v);      \
+    _EX(glRasterPos3##suffix);         \
+    _EX(glRasterPos4##suffix##v);      \
+    _EX(glRasterPos4##suffix);         \
+    _EX(glWindowPos2##suffix##v);      \
+    _EX(glWindowPos2##suffix);         \
+    _EX(glWindowPos3##suffix##v);      \
+    _EX(glWindowPos3##suffix);         \
+    _EX(glVertex2##suffix##v);         \
+    _EX(glVertex2##suffix);            \
+    _EX(glVertex3##suffix##v);         \
+    _EX(glVertex3##suffix);            \
+    _EX(glVertex4##suffix##v);         \
+    _EX(glVertex4##suffix);            \
+    _EX(glTexCoord1##suffix##v);       \
+    _EX(glTexCoord1##suffix);          \
+    _EX(glTexCoord2##suffix##v);       \
+    _EX(glTexCoord2##suffix);          \
+    _EX(glTexCoord3##suffix##v);       \
+    _EX(glTexCoord3##suffix);          \
+    _EX(glTexCoord4##suffix##v);       \
+    _EX(glTexCoord4##suffix);          \
+    _EX(glMultiTexCoord1##suffix##v);  \
+    _EX(glMultiTexCoord1##suffix);     \
+    _EX(glMultiTexCoord2##suffix##v);  \
+    _EX(glMultiTexCoord2##suffix);     \
+    _EX(glMultiTexCoord3##suffix##v);  \
+    _EX(glMultiTexCoord3##suffix);     \
+    _EX(glMultiTexCoord4##suffix##v);  \
+    _EX(glMultiTexCoord4##suffix);     \
+    _EXT(glMultiTexCoord1##suffix##v); \
+    _EXT(glMultiTexCoord1##suffix);    \
+    _EXT(glMultiTexCoord2##suffix##v); \
+    _EXT(glMultiTexCoord2##suffix);    \
+    _EXT(glMultiTexCoord3##suffix##v); \
+    _EXT(glMultiTexCoord3##suffix);    \
+    _EXT(glMultiTexCoord4##suffix##v); \
+    _EXT(glMultiTexCoord4##suffix);    \
+    _ARB(glMultiTexCoord1##suffix##v); \
+    _ARB(glMultiTexCoord1##suffix);    \
+    _ARB(glMultiTexCoord2##suffix##v); \
+    _ARB(glMultiTexCoord2##suffix);    \
+    _ARB(glMultiTexCoord3##suffix##v); \
+    _ARB(glMultiTexCoord3##suffix);    \
+    _ARB(glMultiTexCoord4##suffix##v); \
+    _ARB(glMultiTexCoord4##suffix);
+
+    THUNK(b, GLbyte);
+    THUNK(d, GLdouble);
+    THUNK(i, GLint);
+    THUNK(s, GLshort);
+    THUNK(ub, GLubyte);
+    THUNK(ui, GLuint);
+    THUNK(us, GLushort);
+    THUNK(f, GLfloat);
+    #undef THUNK
+    
+    _EX(glPointParameterf);
+    _EX(glPointParameterfv);
+    _ARB(glPointParameterf);
+    _ARB(glPointParameterfv);
+    _EXT(glPointParameterf);
+    _EXT(glPointParameterfv);
+
+    // functions we actually define
+    _EXT(glActiveTexture);
+    _ARB(glActiveTexture);
+    _EX(glArrayElement);
+    _EX(glBegin);
+    _EX(glBitmap);
+    if(g_cobalt.blendcolor || hardext.blendcolor) {
+        _EX(glBlendColor);
+        _EXT(glBlendColor);
+        _ARB(glBlendColor);
+    }
+    _EXT(glBlendEquation);
+    _ARB(glBlendEquation);
+    _EXT(glBlendFunc);
+    _ARB(glBlendFunc);
+
+    if(hardext.blendeq) {
+        _EXT(glBlendEquationSeparate);
+        _ARB(glBlendEquationSeparate);
+        _EX(glBlendEquationSeparatei);
+        _EXT(glBlendEquationSeparatei);
+        _ARB(glBlendEquationSeparatei);
+    }
+    if(hardext.blendfunc) {
+        _EXT(glBlendFuncSeparate);
+        _ARB(glBlendFuncSeparate);
+        _EX(glBlendFuncSeparatei);
+        _EXT(glBlendFuncSeparatei);
+        _ARB(glBlendFuncSeparatei);
+    }
+    _EX(glStencilMaskSeparate);
+    _EXT(glStencilMaskSeparate);
+    _EX(glCallList);
+    _EX(glCallLists);
+    _EX(glClearDepth);
+    _EXT(glClientActiveTexture);
+    _ARB(glClientActiveTexture);
+    _EX(glClipPlane);
+    _EX(glCopyPixels);
+    _EX(glDeleteLists);
+    _EX(glDepthRange);
+    _EX(glDrawBuffer);
+    _EX(glDrawPixels);
+    _EX(glDrawRangeElements);
+    _EXT(glDrawRangeElements);
+    _EX(glEdgeFlag);
+    _EX(glEnd);
+    _EX(glEndList);
+    _EX(glEvalCoord1d);
+    _EX(glEvalCoord1f);
+    _EX(glEvalCoord2d);
+    _EX(glEvalCoord2f);
+    _EX(glEvalCoord1dv);
+    _EX(glEvalCoord1fv);
+    _EX(glEvalCoord2dv);
+    _EX(glEvalCoord2fv);
+    _EX(glEvalMesh1);
+    _EX(glEvalMesh2);
+    _EX(glEvalPoint1);
+    _EX(glEvalPoint2);
+    _EX(glFogCoordd);
+    _EX(glFogCoorddv);
+    _EX(glFogCoordf);
+    _EX(glFogCoordfv);
+    _EX(glFogi);
+    _EX(glFogiv);
+    _EX(glFrustum);
+    _EX(glGenLists);
+    _EX(glGetDoublev);
+    _EX(glGetIntegerv);
+    _EX(glGetMapdv);
+    _EX(glGetMapfv);
+    _EX(glGetMapiv);
+    _EX(glGetTexImage);
+    _EX(glGetTexLevelParameterfv);
+    _EX(glGetTexLevelParameteriv);
+    _EX(glInitNames);
+    _EX(glInterleavedArrays);
+    _EX(glIsList);
+    _EX(glLighti);
+    _EX(glLightiv);
+    _EX(glLightModeli);
+    _EX(glLightModeliv);
+    _EX(glLineStipple);
+    _EX(glListBase);
+    _EX(glLoadMatrixd);
+    _EX(glLoadName);
+    _EXT(glLockArrays);
+    _EX(glMap1d);
+    _EX(glMap1f);
+    _EX(glMap2d);
+    _EX(glMap2f);
+    _EX(glMapGrid1d);
+    _EX(glMapGrid1f);
+    _EX(glMapGrid2d);
+    _EX(glMapGrid2f);
+    _EX(glMateriali);
+    _EX(glMaterialiv);
+    _EX(glMultMatrixd);
+    _EX(glNewList);
+    _EX(glOrtho);
+    _EX(glPixelTransferf);
+    _EX(glPixelTransferi);
+    _EX(glPixelZoom);
+    _EX(glPolygonMode);
+    _EX(glPolygonStipple);
+    _EX(glPopAttrib);
+    _EX(glPopClientAttrib);
+    _EX(glPopName);
+    _EX(glPushAttrib);
+    _EX(glPushClientAttrib);
+    _EX(glPushName);
+    _EX(glRasterPos2i);
+    _EX(glReadBuffer);
+    _EX(glRectd);
+    _EX(glRectf);
+    _EX(glRecti);
+    _EX(glRects);
+    _EX(glRectdv);
+    _EX(glRectfv);
+    _EX(glRectiv);
+    _EX(glRectsv);
+    _EX(glRenderMode);
+    _EX(glRotated);
+    _EX(glScaled);
+    _EX(glSecondaryColorPointer);
+    _EXT(glSecondaryColorPointer);
+    _EX(glTexEnvf);
+    _EX(glTexEnviv);
+    _EX(glTexGend);
+    _EX(glTexGendv);
+    _EX(glTexGenf);
+    _EX(glTexGenfv);
+    _EX(glTexGeni);
+    _EX(glTexGeniv);
+    _EX(glTexImage1D);
+    _EX(glTexImage3D);
+    _EX(glTexSubImage1D);
+    _EX(glTexSubImage3D);
+    _EXT(glTexImage3D);
+    _EXT(glTexSubImage3D);
+    _EX(glCompressedTexImage1D);
+    _EX(glCompressedTexSubImage1D);
+    _EX(glCompressedTexImage3D);
+    _EX(glCompressedTexSubImage3D);
+    _EX(glGetCompressedTexImage);
+    _EXT(glCompressedTexImage2D);
+    _EXT(glCompressedTexSubImage2D);
+    _EXT(glCompressedTexImage1D);
+    _EXT(glCompressedTexSubImage1D);
+    _EXT(glCompressedTexImage3D);
+    _EXT(glCompressedTexSubImage3D);
+    _EXT(glGetCompressedTexImage);
+    _ARB(glCompressedTexImage2D);
+    _ARB(glCompressedTexSubImage2D);
+    _ARB(glCompressedTexImage1D);
+    _ARB(glCompressedTexSubImage1D);
+    _ARB(glCompressedTexImage3D);
+    _ARB(glCompressedTexSubImage3D);
+    _ARB(glGetCompressedTexImage);
+    _EX(glCopyTexImage1D);
+    _EX(glCopyTexSubImage1D);
+    _EX(glTranslated);
+    _EXT(glUnlockArrays);
+    _EX(glGetTexGenfv);
+    _EX(glGetTexGendv);
+    _EX(glGetTexGeniv);
+    _EX(glLoadTransposeMatrixf);
+    _EX(glLoadTransposeMatrixd);
+    _EX(glMultTransposeMatrixd);
+    _EX(glMultTransposeMatrixf);
+    // stubs for unimplemented functions
+    STUB_VERBOSE(glAccum);
+    STUB_VERBOSE(glAreTexturesResident);
+    STUB_VERBOSE(glClearAccum);
+    _EX(glColorMaterial);
+    _EX(glCopyTexSubImage3D);   // It's a stub, calling the 2D one
+    STUB_VERBOSE(glFeedbackBuffer);
+    _EX(glGetClipPlane);
+    _EX(glGetLightiv);
+    _EX(glGetMaterialiv);
+    _EX(glGetPixelMapfv);
+    _EX(glGetPixelMapuiv);
+    _EX(glGetPixelMapusv);
+    STUB_VERBOSE(glGetPolygonStipple);
+    _EX(glGetStringi);
+    STUB_VERBOSE(glPassThrough);
+    _EX(glPixelMapfv);
+    _EX(glPixelMapuiv);
+    _EX(glPixelMapusv);
+    _EX(glPixelStoref);
+    STUB_VERBOSE(glPrioritizeTextures);
+    STUB_VERBOSE(glSelectBuffer);   //TODO
+
+    _EX(glMultiDrawArrays);
+    _EXT(glMultiDrawArrays);
+    _EX(glMultiDrawElements);
+    _EXT(glMultiDrawElements);
+
+    _EX(glPointParameteri);
+    _EX(glPointParameteriv);
+    
+    _EX(glFogCoordPointer);
+    if(hardext.esversion>1) {
+        // EXT_fog_coord supported
+        _EXT(glFogCoordd);
+        _EXT(glFogCoorddv);
+        _EXT(glFogCoordf);
+        _EXT(glFogCoordfv);
+        _EXT(glFogCoordPointer);
+    }
+    /*STUB_VERBOSE(glEdgeFlagPointerEXT);
+    STUB_VERBOSE(glIndexPointerEXT);*/
+    STUB_VERBOSE(glClearIndex);
+    STUB_VERBOSE(glEdgeFlagv);
+    STUB_VERBOSE(glIndexMask);
+    
+    //EXT_direct_state_access
+    _EX(glClientAttribDefault);
+    _EX(glPushClientAttribDefault);
+    _EX(glMatrixLoadf);
+    _EX(glMatrixLoadd);
+    _EX(glMatrixMultf);
+    _EX(glMatrixMultd);
+    _EX(glMatrixLoadIdentity);
+    _EX(glMatrixRotatef);
+    _EX(glMatrixRotated);
+    _EX(glMatrixScalef);
+    _EX(glMatrixScaled);
+    _EX(glMatrixTranslatef);
+    _EX(glMatrixTranslated);
+    _EX(glMatrixOrtho);
+    _EX(glMatrixFrustum);
+    _EX(glMatrixPush);
+    _EX(glMatrixPop);
+    _EX(glTextureParameteri);
+    _EX(glTextureParameteriv);
+    _EX(glTextureParameterf);
+    _EX(glTextureParameterfv);
+    _EX(glTextureImage1D);
+    _EX(glTextureImage2D);
+    _EX(glTextureSubImage1D);
+    _EX(glTextureSubImage2D);
+    _EX(glCopyTextureImage1D);
+    _EX(glCopyTextureImage2D);
+    _EX(glCopyTextureSubImage1D);
+    _EX(glCopyTextureSubImage2D);
+    _EX(glGetTextureImage);
+    _EX(glGetTextureParameterfv);
+    _EX(glGetTextureParameteriv);
+    _EX(glGetTextureLevelParameterfv);
+    _EX(glGetTextureLevelParameteriv);
+    _EX(glTextureImage3D);
+    _EX(glTextureSubImage3D);
+    _EX(glCopyTextureSubImage3D);
+    _EX(glBindMultiTexture);
+    _EX(glMultiTexCoordPointer);
+    _EX(glMultiTexEnvf);
+    _EX(glMultiTexEnvfv);
+    _EX(glMultiTexEnvi);
+    _EX(glMultiTexEnviv);
+    _EX(glMultiTexGend);
+    _EX(glMultiTexGendv);
+    _EX(glMultiTexGenf);
+    _EX(glMultiTexGenfv);
+    _EX(glMultiTexGeni);
+    _EX(glMultiTexGeniv);
+    _EX(glGetMultiTexEnvfv);
+    _EX(glGetMultiTexEnviv);
+    _EX(glGetMultiTexGendv);
+    _EX(glGetMultiTexGenfv);
+    _EX(glGetMultiTexGeniv);
+    _EX(glMultiTexParameteri);
+    _EX(glMultiTexParameteriv);
+    _EX(glMultiTexParameterf);
+    _EX(glMultiTexParameterfv);
+    _EX(glMultiTexImage1D);
+    _EX(glMultiTexImage2D);
+    _EX(glMultiTexSubImage1D);
+    _EX(glMultiTexSubImage2D);
+    _EX(glCopyMultiTexImage1D);
+    _EX(glCopyMultiTexImage2D);
+    _EX(glCopyMultiTexSubImage1D);
+    _EX(glCopyMultiTexSubImage2D);
+    _EX(glGetMultiTexImage);
+    _EX(glGetMultiTexParameterfv);
+    _EX(glGetMultiTexParameteriv);
+    _EX(glGetMultiTexLevelParameterfv);
+    _EX(glGetMultiTexLevelParameteriv);
+    _EX(glMultiTexImage3D);
+    _EX(glMultiTexSubImage3D);
+    _EX(glCopyMultiTexSubImage3D);
+    _EX(glEnableClientStateIndexed);
+    _EX(glDisableClientStateIndexed);
+    _EX(glEnableClientStatei);
+    _EX(glDisableClientStatei);
+    _EX(glEnableVertexArray);
+    _EX(glDisableVertexArray);
+    _EX(glEnableVertexArrayAttrib);
+    _EX(glDisableVertexArrayAttrib);
+    _EX(glGetFloatIndexedv);
+    _EX(glGetDoubleIndexedv);
+    _EX(glGetIntegerIndexedv);
+    _EX(glGetBooleanIndexedv);
+    _EX(glGetPointerIndexedv);
+    _EX(glEnableIndexed);
+    _EX(glDisableIndexed);
+    _EX(glIsEnabledIndexed);
+    _EX(glCompressedTextureImage3D);
+    _EX(glCompressedTextureImage2D);
+    _EX(glCompressedTextureImage1D);
+    _EX(glCompressedTextureSubImage3D);
+    _EX(glCompressedTextureSubImage2D);
+    _EX(glCompressedTextureSubImage1D);
+    _EX(glGetCompressedTextureImage);
+    _EX(glCompressedMultiTexImage3D);
+    _EX(glCompressedMultiTexImage2D);
+    _EX(glCompressedMultiTexImage1D);
+    _EX(glCompressedMultiTexSubImage3D);
+    _EX(glCompressedMultiTexSubImage2D);
+    _EX(glCompressedMultiTexSubImage1D);
+    _EX(glGetCompressedMultiTexImage);
+    _EX(glMatrixLoadTransposef);
+    _EX(glMatrixLoadTransposed);
+    _EX(glMatrixMultTransposef);
+    _EX(glMatrixMultTransposed);
+    _EXT(glClientAttribDefault);
+    _EXT(glPushClientAttribDefault);
+    _EXT(glMatrixLoadf);
+    _EXT(glMatrixLoadd);
+    _EXT(glMatrixMultf);
+    _EXT(glMatrixMultd);
+    _EXT(glMatrixLoadIdentity);
+    _EXT(glMatrixRotatef);
+    _EXT(glMatrixRotated);
+    _EXT(glMatrixScalef);
+    _EXT(glMatrixScaled);
+    _EXT(glMatrixTranslatef);
+    _EXT(glMatrixTranslated);
+    _EXT(glMatrixOrtho);
+    _EXT(glMatrixFrustum);
+    _EXT(glMatrixPush);
+    _EXT(glMatrixPop);
+    _EXT(glTextureParameteri);
+    _EXT(glTextureParameteriv);
+    _EXT(glTextureParameterf);
+    _EXT(glTextureParameterfv);
+    _EXT(glTextureImage1D);
+    _EXT(glTextureImage2D);
+    _EXT(glTextureSubImage1D);
+    _EXT(glTextureSubImage2D);
+    _EXT(glCopyTextureImage1D);
+    _EXT(glCopyTextureImage2D);
+    _EXT(glCopyTextureSubImage1D);
+    _EXT(glCopyTextureSubImage2D);
+    _EXT(glGetTextureImage);
+    _EXT(glGetTextureParameterfv);
+    _EXT(glGetTextureParameteriv);
+    _EXT(glGetTextureLevelParameterfv);
+    _EXT(glGetTextureLevelParameteriv);
+    _EXT(glTextureImage3D);
+    _EXT(glTextureSubImage3D);
+    _EXT(glCopyTextureSubImage3D);
+    _EXT(glBindMultiTexture);
+    _EXT(glMultiTexCoordPointer);
+    _EXT(glMultiTexEnvf);
+    _EXT(glMultiTexEnvfv);
+    _EXT(glMultiTexEnvi);
+    _EXT(glMultiTexEnviv);
+    _EXT(glMultiTexGend);
+    _EXT(glMultiTexGendv);
+    _EXT(glMultiTexGenf);
+    _EXT(glMultiTexGenfv);
+    _EXT(glMultiTexGeni);
+    _EXT(glMultiTexGeniv);
+    _EXT(glGetMultiTexEnvfv);
+    _EXT(glGetMultiTexEnviv);
+    _EXT(glGetMultiTexGendv);
+    _EXT(glGetMultiTexGenfv);
+    _EXT(glGetMultiTexGeniv);
+    _EXT(glMultiTexParameteri);
+    _EXT(glMultiTexParameteriv);
+    _EXT(glMultiTexParameterf);
+    _EXT(glMultiTexParameterfv);
+    _EXT(glMultiTexImage1D);
+    _EXT(glMultiTexImage2D);
+    _EXT(glMultiTexSubImage1D);
+    _EXT(glMultiTexSubImage2D);
+    _EXT(glCopyMultiTexImage1D);
+    _EXT(glCopyMultiTexImage2D);
+    _EXT(glCopyMultiTexSubImage1D);
+    _EXT(glCopyMultiTexSubImage2D);
+    _EXT(glGetMultiTexImage);
+    _EXT(glGetMultiTexParameterfv);
+    _EXT(glGetMultiTexParameteriv);
+    _EXT(glGetMultiTexLevelParameterfv);
+    _EXT(glGetMultiTexLevelParameteriv);
+    _EXT(glMultiTexImage3D);
+    _EXT(glMultiTexSubImage3D);
+    _EXT(glCopyMultiTexSubImage3D);
+    _EXT(glEnableClientStateIndexed);
+    _EXT(glDisableClientStateIndexed);
+    _EXT(glEnableClientStatei);
+    _EXT(glDisableClientStatei);
+    _EXT(glEnableVertexArray);
+    _EXT(glDisableVertexArray);
+    _EXT(glEnableVertexArrayAttrib);
+    _EXT(glDisableVertexArrayAttrib);
+    _EXT(glGetFloatIndexedv);
+    _EXT(glGetDoubleIndexedv);
+    _EXT(glGetIntegerIndexedv);
+    _EXT(glGetBooleanIndexedv);
+    _EXT(glGetPointerIndexedv);
+    _EXT(glEnableIndexed);
+    _EXT(glDisableIndexed);
+    _EXT(glIsEnabledIndexed);
+    _EXT(glCompressedTextureImage3D);
+    _EXT(glCompressedTextureImage2D);
+    _EXT(glCompressedTextureImage1D);
+    _EXT(glCompressedTextureSubImage3D);
+    _EXT(glCompressedTextureSubImage2D);
+    _EXT(glCompressedTextureSubImage1D);
+    _EXT(glGetCompressedTextureImage);
+    _EXT(glCompressedMultiTexImage3D);
+    _EXT(glCompressedMultiTexImage2D);
+    _EXT(glCompressedMultiTexImage1D);
+    _EXT(glCompressedMultiTexSubImage3D);
+    _EXT(glCompressedMultiTexSubImage2D);
+    _EXT(glCompressedMultiTexSubImage1D);
+    _EXT(glGetCompressedMultiTexImage);
+    _EXT(glMatrixLoadTransposef);
+    _EXT(glMatrixLoadTransposed);
+    _EXT(glMatrixMultTransposef);
+    _EXT(glMatrixMultTransposed);
+
+    if(g_cobalt.queries) {
+        _EX(glGenQueries);
+        _EX(glIsQuery);
+        _EX(glDeleteQueries);
+        _EX(glBeginQuery);
+        _EX(glEndQuery);
+        _EX(glGetQueryiv);
+        _EX(glGetQueryObjectiv);
+        _EX(glGetQueryObjectuiv);
+        _EX(glQueryCounter);
+        _EX(glGetQueryObjecti64v);
+        _EX(glGetQueryObjectui64v);
+
+        _ARB(glGenQueries);
+        _ARB(glIsQuery);
+        _ARB(glDeleteQueries);
+        _ARB(glBeginQuery);
+        _ARB(glEndQuery);
+        _ARB(glGetQueryiv);
+        _ARB(glGetQueryObjectiv);
+        _ARB(glGetQueryObjectuiv);
+        _ARB(glQueryCounter);
+    }
+
+    // GL_ARB_multisample
+    _ARB(glSampleCoverage);
+
+    // extra shaders stuff
+    #define THUNK(suffix) \
+    _EX(glVertexAttrib1##suffix); \
+    _EX(glVertexAttrib2##suffix); \
+    _EX(glVertexAttrib3##suffix); \
+    _EX(glVertexAttrib4##suffix); \
+    _EXT(glVertexAttrib1##suffix); \
+    _EXT(glVertexAttrib2##suffix); \
+    _EXT(glVertexAttrib3##suffix); \
+    _EXT(glVertexAttrib4##suffix);
+    THUNK(s);
+    THUNK(d);
+    THUNK(sv);
+    THUNK(dv);
+    #undef THUNK
+    #define THUNK(suffix) \
+    _EX(glVertexAttrib4##suffix##v); \
+    _EX(glVertexAttrib4u##suffix##v); \
+    _EX(glVertexAttrib4N##suffix##v); \
+    _EX(glVertexAttrib4Nu##suffix##v);\
+    _EXT(glVertexAttrib4##suffix##v); \
+    _EXT(glVertexAttrib4u##suffix##v); \
+    _EXT(glVertexAttrib4N##suffix##v); \
+    _EXT(glVertexAttrib4Nu##suffix##v);
+    THUNK(b);
+    THUNK(s);
+    THUNK(i);
+    #undef THUNK
+    _EX(glGetVertexAttribdv);
+    _EXT(glGetVertexAttribdv);
+    _ARB(glGetVertexAttribdv);
+    _EX(glVertexAttrib4Nub);
+    _EXT(glVertexAttrib4Nub);
+    _ARB(glVertexAttrib4Nub);
+    // arb version of shader stuffs
+    //  GL_ARB_vertex_shader
+    _ARB(glVertexAttrib1f);
+    _ARB(glVertexAttrib1s);
+    _ARB(glVertexAttrib1d);
+    _ARB(glVertexAttrib2f);
+    _ARB(glVertexAttrib2s);
+    _ARB(glVertexAttrib2d);
+    _ARB(glVertexAttrib3f);
+    _ARB(glVertexAttrib3s);
+    _ARB(glVertexAttrib3d);
+    _ARB(glVertexAttrib4f);
+    _ARB(glVertexAttrib4s);
+    _ARB(glVertexAttrib4d);
+    _ARB(glVertexAttrib4Nub);
+    _ARB(glVertexAttrib1fv);
+    _ARB(glVertexAttrib1sv);
+    _ARB(glVertexAttrib1dv);
+    _ARB(glVertexAttrib2fv);
+    _ARB(glVertexAttrib2sv);
+    _ARB(glVertexAttrib2dv);
+    _ARB(glVertexAttrib3fv);
+    _ARB(glVertexAttrib3sv);
+    _ARB(glVertexAttrib3dv);
+    _ARB(glVertexAttrib4fv);
+    _ARB(glVertexAttrib4sv);
+    _ARB(glVertexAttrib4dv);
+    _ARB(glVertexAttrib4iv);
+    _ARB(glVertexAttrib4bv);
+    _ARB(glVertexAttrib4ubv);
+    _ARB(glVertexAttrib4usv);
+    _ARB(glVertexAttrib4uiv);
+    _ARB(glVertexAttrib4Nbv);
+    _ARB(glVertexAttrib4Nsv);
+    _ARB(glVertexAttrib4Niv);
+    _ARB(glVertexAttrib4Nubv);
+    _ARB(glVertexAttrib4Nusv);
+    _ARB(glVertexAttrib4Nuiv);
+    _ARB(glVertexAttribPointer);
+    _ARB(glEnableVertexAttribArray);
+    _ARB(glDisableVertexAttribArray);
+    _ARB(glBindAttribLocation);
+    _ARB(glGetActiveAttrib);
+    _ARB(glGetAttribLocation);
+    _ARB(glGetVertexAttribdv);
+    _ARB(glGetVertexAttribfv);
+    _ARB(glGetVertexAttribiv);
+    _ARB(glGetVertexAttribPointerv);
+    // GL_ARB_fragment_shader (nothing)
+    // GL_ARGB_shader_objects
+    _ARB(glDeleteObject);
+    _ARB(glGetHandle);
+    _ARB(glDetachObject);
+    _ARB(glCreateShaderObject);
+    _ARB(glShaderSource);
+    _ARB(glCompileShader);
+    _ARB(glCreateProgramObject);
+    _ARB(glAttachObject);
+    _ARB(glLinkProgram);
+    _ARB(glUseProgramObject);
+    _ARB(glValidateProgram);
+    _ARB(glUniform1f);
+    _ARB(glUniform2f);
+    _ARB(glUniform3f);
+    _ARB(glUniform4f);
+    _ARB(glUniform1i);
+    _ARB(glUniform2i);
+    _ARB(glUniform3i);
+    _ARB(glUniform4i);
+    _ARB(glUniform1fv);
+    _ARB(glUniform2fv);
+    _ARB(glUniform3fv);
+    _ARB(glUniform4fv);
+    _ARB(glUniform1iv);
+    _ARB(glUniform2iv);
+    _ARB(glUniform3iv);
+    _ARB(glUniform4iv);
+    _ARB(glUniformMatrix2fv);
+    _ARB(glUniformMatrix3fv);
+    _ARB(glUniformMatrix4fv);
+    _ARB(glGetObjectParameterfv);
+    _ARB(glGetObjectParameteriv);
+    _ARB(glGetInfoLog);
+    _ARB(glGetAttachedObjects);
+    _ARB(glGetUniformLocation);
+    _ARB(glGetActiveUniform);
+    _ARB(glGetUniformfv);
+    _ARB(glGetUniformiv);
+    _ARB(glGetShaderSource);
+    _EX(glProgramUniform1f);
+    _EX(glProgramUniform2f);
+    _EX(glProgramUniform3f);
+    _EX(glProgramUniform4f);
+    _EX(glProgramUniform1i);
+    _EX(glProgramUniform2i);
+    _EX(glProgramUniform3i);
+    _EX(glProgramUniform4i);
+    _EX(glProgramUniform1fv);
+    _EX(glProgramUniform2fv);
+    _EX(glProgramUniform3fv);
+    _EX(glProgramUniform4fv);
+    _EX(glProgramUniform1iv);
+    _EX(glProgramUniform2iv);
+    _EX(glProgramUniform3iv);
+    _EX(glProgramUniform4iv);
+    _EX(glProgramUniformMatrix2fv);
+    _EX(glProgramUniformMatrix3fv);
+    _EX(glProgramUniformMatrix4fv);
+    // EXT version of Shaders functions
+    _EXT(glAttachShader);
+    _EXT(glBindAttribLocation);
+    _EXT(glCompileShader);
+    _EXT(glCreateProgram);
+    _EXT(glCreateShader);
+    _EXT(glDeleteProgram);
+    _EXT(glDeleteShader);
+    _EXT(glDetachShader);
+    _EXT(glGetActiveAttrib);
+    _EXT(glGetActiveUniform);
+    _EXT(glGetAttachedShaders);
+    _EXT(glGetAttribLocation);
+    _EXT(glGetProgramInfoLog);
+    _EXT(glGetProgramiv);
+    _EXT(glGetShaderInfoLog);
+    _EXT(glGetShaderPrecisionFormat);
+    _EXT(glGetShaderSource);
+    _EXT(glGetShaderiv);
+    _EXT(glGetUniformLocation);
+    _EXT(glGetUniformfv);
+    _EXT(glGetUniformiv);
+    _EXT(glGetVertexAttribPointerv);
+    _EXT(glGetVertexAttribfv);
+    _EXT(glGetVertexAttribiv);
+    _EXT(glIsProgram);
+    _EXT(glIsShader);
+    _EXT(glReleaseShaderCompiler);
+    _EXT(glShaderBinary);
+    _EXT(glShaderSource);
+    _EXT(glUniform1f);
+    _EXT(glUniform1fv);
+    _EXT(glUniform1i);
+    _EXT(glUniform1iv);
+    _EXT(glUniform2f);
+    _EXT(glUniform2fv);
+    _EXT(glUniform2i);
+    _EXT(glUniform2iv);
+    _EXT(glUniform3f);
+    _EXT(glUniform3fv);
+    _EXT(glUniform3i);
+    _EXT(glUniform3iv);
+    _EXT(glUniform4f);
+    _EXT(glUniform4fv);
+    _EXT(glUniform4i);
+    _EXT(glUniform4iv);
+    _EXT(glUniformMatrix2fv);
+    _EXT(glUniformMatrix3fv);
+    _EXT(glUniformMatrix4fv);
+    _EXT(glUseProgram);
+    _EXT(glValidateProgram);
+    _EXT(glVertexAttrib1f);
+    _EXT(glVertexAttrib1fv);
+    _EXT(glVertexAttrib2f);
+    _EXT(glVertexAttrib2fv);
+    _EXT(glVertexAttrib3f);
+    _EXT(glVertexAttrib3fv);
+    _EXT(glVertexAttrib4f);
+    _EXT(glVertexAttrib4fv);
+    _EXT(glVertexAttribPointer);
+    _EXT(glVertexAttribIPointer);
+    _EX(glVertexAttribIPointer);
+    _EXT(glVertexPointer);
+    _EXT(glProgramUniform1f);
+    _EXT(glProgramUniform2f);
+    _EXT(glProgramUniform3f);
+    _EXT(glProgramUniform4f);
+    _EXT(glProgramUniform1i);
+    _EXT(glProgramUniform2i);
+    _EXT(glProgramUniform3i);
+    _EXT(glProgramUniform4i);
+    _EXT(glProgramUniform1fv);
+    _EXT(glProgramUniform2fv);
+    _EXT(glProgramUniform3fv);
+    _EXT(glProgramUniform4fv);
+    _EXT(glProgramUniform1iv);
+    _EXT(glProgramUniform2iv);
+    _EXT(glProgramUniform3iv);
+    _EXT(glProgramUniform4iv);
+    _EXT(glProgramUniformMatrix2fv);
+    _EXT(glProgramUniformMatrix3fv);
+    _EXT(glProgramUniformMatrix4fv);
+
+    //Binary program
+    _EX(glGetProgramBinary);
+    _EX(glProgramBinary);
+    _EXT(glGetProgramBinary);
+    _EXT(glProgramBinary);
+    _ARB(glGetProgramBinary);
+    _ARB(glProgramBinary);
+
+    //ARB_draw_elements_base_vertex / EXT_draw_elements_base_vertex
+    _EX(glDrawElementsBaseVertex);
+    _EXT(glDrawElementsBaseVertex);
+    _ARB(glDrawElementsBaseVertex);
+    _EX(glDrawRangeElementsBaseVertex);
+    _EXT(glDrawRangeElementsBaseVertex);
+    _ARB(glDrawRangeElementsBaseVertex);
+    _EX(glMultiDrawElementsBaseVertex);
+    _EXT(glMultiDrawElementsBaseVertex);
+    _ARB(glMultiDrawElementsBaseVertex);
+
+    //GL_ARB_draw_instanced
+    _EX(glDrawArraysInstanced);
+    _EXT(glDrawArraysInstanced); // not sure _EXT is needed...
+    _ARB(glDrawArraysInstanced);
+    _EX(glDrawElementsInstanced);
+    _EXT(glDrawElementsInstanced);
+    _ARB(glDrawElementsInstanced);
+    _EX(glDrawElementsInstancedBaseVertex);
+    _EXT(glDrawElementsInstancedBaseVertex);
+    _ARB(glDrawElementsInstancedBaseVertex);
+
+    //GL_ARB_instanced_arrays
+    _EX(glVertexAttribDivisor);
+    _EXT(glVertexAttribDivisor);
+    _ARB(glVertexAttribDivisor);
+
+    // stub non-squared matrix access
+    STUB_VERBOSE(glUniformMatrix2x3fv);
+    STUB_VERBOSE(glUniformMatrix3x2fv);
+    STUB_VERBOSE(glUniformMatrix2x4fv);
+    STUB_VERBOSE(glUniformMatrix4x2fv);
+    STUB_VERBOSE(glUniformMatrix3x4fv);
+    STUB_VERBOSE(glUniformMatrix4x3fv);
+
+    //TexStorage
+    _EX(glTexStorage1D);
+    _EX(glTexStorage2D);
+    _EX(glTexStorage3D);
+
+    _EX(glClampColor);
+    _EXT(glClampColor);
+
+    //GL_ARB_vertex_program
+    if(hardext.esversion>1) {
+        _EX(glProgramStringARB);
+        _EX(glBindProgramARB);
+        _EX(glDeleteProgramsARB);
+        _EX(glGenProgramsARB);
+        _EX(glProgramEnvParameter4dARB);
+        _EX(glProgramEnvParameter4dvARB);
+        _EX(glProgramEnvParameter4fARB);
+        _EX(glProgramEnvParameter4fvARB);
+        _EX(glProgramLocalParameter4dARB);
+        _EX(glProgramLocalParameter4dvARB);
+        _EX(glProgramLocalParameter4fARB);
+        _EX(glProgramLocalParameter4fvARB);
+        _EX(glGetProgramEnvParameterdvARB);
+        _EX(glGetProgramEnvParameterfvARB);
+        _EX(glGetProgramLocalParameterdvARB);
+        _EX(glGetProgramLocalParameterfvARB);
+        _EX(glGetProgramivARB);
+        _EX(glGetProgramStringARB);
+        _EX(glIsProgramARB);
+
+        // GL_EXT_program_parameters
+        _EX(glProgramEnvParameters4fvEXT)
+        _EX(glProgramLocalParameters4fvEXT)
+    }
+
+    // GL 3.0
+
+    //Sampler
+    _EX(glGenSamplers);
+    _EX(glBindSampler);
+    _EX(glDeleteSamplers);
+    _EX(glIsSampler);
+    _EX(glSamplerParameterf);
+    _EX(glSamplerParameteri);
+    _EX(glSamplerParameterfv);
+    _EX(glSamplerParameteriv);
+    _EX(glSamplerParameterIiv);
+    _EX(glSamplerParameterIuiv);
+    _EX(glGetSamplerParameterfv);
+    _EX(glGetSamplerParameteriv);
+    _EX(glGetSamplerParameterIiv);
+    _EX(glGetSamplerParameterIuiv);
+
+    // IPointer
+    //_EX(glVertexAttribIPointer);
+
+    // Additional stubs that report some more info
+    if(g_cobalt.vgpu_stubland){
+        ALL_FUNCTIONS;
+    }
+
+
+    DBG(printf("NULL\n");)
+    if (!g_cobalt.silentstub) LOGD("cobalt GetProcAddress: %s not found.\n", name);
+    return NULL;
+}

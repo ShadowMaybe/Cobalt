@@ -1,0 +1,40 @@
+#include "../gles.h"
+
+//GLint COBALT_API cobalt_glRenderMode(GLenum mode);
+//void COBALT_API cobalt_glBlendEquationSeparate(GLenum modeRGB, GLenum modeAlpha);
+void COBALT_API cobalt_glBlendEquationSeparatei(GLuint buf, GLenum modeRGB, GLenum modeAlpha);
+//void COBALT_API cobalt_glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+void COBALT_API cobalt_glBlendFuncSeparatei(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+//void COBALT_API cobalt_glColorMaterial(GLenum face, GLenum mode);
+void COBALT_API cobalt_glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type);
+void COBALT_API cobalt_glDrawBuffer(GLenum mode);
+void COBALT_API cobalt_glEdgeFlag(GLboolean flag);
+//void COBALT_API cobalt_glFogCoordd(GLdouble coord);
+//void COBALT_API cobalt_glFogCoorddv(const GLdouble *coord);
+//void COBALT_API cobalt_glFogCoordf(GLfloat coord);
+//void COBALT_API cobalt_glFogCoordfv(const GLfloat *coord);
+//void COBALT_API cobalt_glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, GLvoid * img);
+//void COBALT_API cobalt_glGetTexLevelParameterfv(GLenum target, GLint level, GLenum pname, GLfloat *params);
+//void COBALT_API cobalt_glGetTexLevelParameteriv(GLenum target, GLint level, GLenum pname, GLint *params);
+void COBALT_API cobalt_glIndexf(GLfloat c);
+void COBALT_API cobalt_glLightModeli(GLenum pname, GLint param);
+void COBALT_API cobalt_glPolygonStipple(const GLubyte *mask);
+void COBALT_API cobalt_glReadBuffer(GLenum mode);
+void COBALT_API cobalt_glSecondaryColor3f(GLfloat r, GLfloat g, GLfloat b);
+void COBALT_API cobalt_glColorTable (GLenum target, GLenum internalformat, GLsizei width, GLenum format, GLenum type, const GLvoid *table);
+//void COBALT_API cobalt_glIndexPointer(GLenum  type,  GLsizei  stride,  const GLvoid *  pointer);
+
+void COBALT_API cobalt_glAccum(GLenum op, GLfloat value);
+void COBALT_API cobalt_glPrioritizeTextures(GLsizei n, const GLuint *textures, const GLclampf *priorities);
+void COBALT_API cobalt_glPixelMapfv(GLenum map, GLsizei mapsize, const GLfloat *values);
+void COBALT_API cobalt_glPixelMapuiv(GLenum map,GLsizei mapsize, const GLuint *values);
+void COBALT_API cobalt_glPixelMapusv(GLenum map,GLsizei mapsize, const GLushort *values);
+void COBALT_API cobalt_glPassThrough(GLfloat token);
+void COBALT_API cobalt_glIndexMask(GLuint mask);
+void COBALT_API cobalt_glGetPixelMapfv(GLenum map, GLfloat *data);
+void COBALT_API cobalt_glGetPixelMapuiv(GLenum map, GLuint *data);
+void COBALT_API cobalt_glGetPixelMapusv(GLenum map, GLushort *data);
+void COBALT_API cobalt_glClearIndex(GLfloat c);
+void COBALT_API cobalt_glGetPolygonStipple(GLubyte *pattern);
+void COBALT_API cobalt_glFeedbackBuffer(GLsizei size, GLenum type, GLfloat *buffer);
+void COBALT_API cobalt_glEdgeFlagv(GLboolean *flag);

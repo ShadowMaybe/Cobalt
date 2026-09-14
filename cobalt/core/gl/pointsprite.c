@@ -1,0 +1,130 @@
+#include "host.h"
+#include "pointsprite.h"
+
+#include "../glx/hardext.h"
+#include "debug.h"
+#include "fpe.h"
+#include "cobalt.h"
+#include "glstate.h"
+#include "loader.h"
+
+void COBALT_API cobalt_glPointParameteri(GLenum pname, GLint param)
+{
+    cobalt_glPointParameterf(pname, param);
+}
+AliasExport(void,glPointParameteri,,(GLenum pname, GLint param));
+
+void COBALT_API cobalt_glPointParameteriv(GLenum pname, const GLint * params)
+{
+    GLfloat tmp[3];
+    int v=(pname==GL_POINT_DISTANCE_ATTENUATION)?3:1;
+    for (int i=0; i<v; i++) tmp[i] = params[i];
+    cobalt_glPointParameterfv(pname, tmp);
+}
+AliasExport(void,glPointParameteriv,,(GLenum pname, const GLint * params));
+
+void COBALT_API cobalt_glPointParameterf(GLenum pname, GLfloat param) {
+    PUSH_IF_COMPILING(glPointParameterf);
+    cobalt_glPointParameterfv(pname, &param);
+}
+AliasExport(void,glPointParameterf,,(GLenum pname, GLfloat param));
+AliasExport(void,glPointParameterf,ARB,(GLenum pname, GLfloat param));
+AliasExport(void,glPointParameterf,EXT,(GLenum pname, GLfloat param));
+
+void COBALT_API cobalt_glPointParameterfv(GLenum pname, const GLfloat * params)
+{
+    if (glstate->list.active)
+        if (glstate->list.compiling) {
+            if (pname == GL_POINT_DISTANCE_ATTENUATION) {
+                NewStage(glstate->list.active, STAGE_POINTPARAM);
+                rlPointParamOp(glstate->list.active, 1, params);
+                return;
+            } else {
+                cobalt_glPointParameterf(pname, params[0]);
+                return;
+            }
+        } else cobalt_flush();
+
+    switch(pname) {
+        case GL_POINT_SIZE_MIN:
+            if(*params<0.0f) {
+                errorShim(GL_INVALID_VALUE);
+                return;
+            }
+            if(glstate->pointsprite.sizeMin == *params) {
+                noerrorShim();
+                return;
+            }
+            glstate->pointsprite.sizeMin = *params;
+            break;
+        case GL_POINT_SIZE_MAX:
+            if(*params<0.0f) {
+                errorShim(GL_INVALID_VALUE);
+                return;
+            }
+            if(glstate->pointsprite.sizeMax == *params) {
+                noerrorShim();
+                return;
+            }
+            glstate->pointsprite.sizeMax = *params;
+            break;
+        case GL_POINT_FADE_THRESHOLD_SIZE:
+            if(*params<0.0f) {
+                errorShim(GL_INVALID_VALUE);
+                return;
+            }
+            if(glstate->pointsprite.fadeThresholdSize == *params) {
+                noerrorShim();
+                return;
+            }
+            glstate->pointsprite.fadeThresholdSize = *params;
+            break;
+        case GL_POINT_DISTANCE_ATTENUATION:
+            if(*params<0.0f) {
+                errorShim(GL_INVALID_VALUE);
+                return;
+            }
+            if(memcmp(glstate->pointsprite.distance, params, 3*sizeof(GLfloat))==0) {
+                noerrorShim();
+                return;
+            }
+            memcpy(glstate->pointsprite.distance, params, 3*sizeof(GLfloat));
+            break;
+        case GL_POINT_SPRITE_COORD_ORIGIN:
+            if(*params!=GL_UPPER_LEFT && *params!=GL_LOWER_LEFT) {
+                errorShim(GL_INVALID_VALUE);
+                return;
+            }
+            if(glstate->pointsprite.coordOrigin == *params) {
+                noerrorShim();
+                return;
+            }
+            if(glstate->fpe_state) {
+                if(*params==GL_LOWER_LEFT)
+                    glstate->fpe_state->pointsprite_upper = 0;
+                else
+                    glstate->fpe_state->pointsprite_upper = 1;
+            }
+            glstate->pointsprite.coordOrigin = *params;
+            break;
+    }
+
+    
+    errorGL();
+    host_functions.fpe_glPointParameterfv(pname, params);
+}
+AliasExport(void,glPointParameterfv,,(GLenum pname, const GLfloat * params));
+AliasExport(void,glPointParameterfv,ARB,(GLenum pname, const GLfloat * params));
+AliasExport(void,glPointParameterfv,EXT,(GLenum pname, const GLfloat * params));
+
+void COBALT_API cobalt_glPointSize(GLfloat size) {
+    if(size<=0.0f) {
+        errorShim(GL_INVALID_VALUE);
+        return;
+    }
+    glstate->pointsprite.size = size;
+    errorGL();
+    
+    host_functions.fpe_glPointSize(size);
+}
+AliasExport(void,glPointSize,,(GLfloat size));

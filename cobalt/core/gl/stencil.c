@@ -1,0 +1,177 @@
+#include "host.h"
+#include "stencil.h"
+
+#include "../glx/hardext.h"
+#include "debug.h"
+#include "cobalt.h"
+#include "glstate.h"
+#include "loader.h"
+
+void COBALT_API cobalt_glStencilMask(GLuint mask) {
+    if(!glstate->list.pending) 
+        PUSH_IF_COMPILING(glStencilMask);
+    
+    if(glstate->stencil.mask[0]==glstate->stencil.mask[1] && glstate->stencil.mask[0]==mask) {
+        noerrorShim();
+        return;
+    }
+    FLUSH_BEGINEND;
+    glstate->stencil.mask[0] = glstate->stencil.mask[1] = mask;
+    errorGL();
+    host_functions.glStencilMask(mask);
+}
+AliasExport(void,glStencilMask,,(GLuint mask));
+
+void COBALT_API cobalt_glStencilMaskSeparate(GLenum face, GLuint mask) {
+    if(face!=GL_FRONT && face!=GL_BACK && face!=GL_FRONT_AND_BACK) {
+        errorShim(GL_INVALID_ENUM);
+        return;
+    }
+    if(face==GL_FRONT_AND_BACK) {
+        cobalt_glStencilMask(mask);
+        return;
+    }
+    if(!glstate->list.pending) 
+        PUSH_IF_COMPILING(glStencilMaskSeparate);
+    if((face==GL_FRONT && glstate->stencil.mask[0]==mask) || (face==GL_BACK && glstate->stencil.mask[1]==mask)) {
+        noerrorShim();
+        return;
+    }
+    
+    FLUSH_BEGINEND;
+    glstate->stencil.mask[(face==GL_FRONT)?0:1] = mask;
+
+    errorGL();
+    if(host_functions.glStencilMaskSeparate) {
+        host_functions.glStencilMaskSeparate(face, mask);
+    } else {
+        // fake function..., call it only for front or front_and_back, just ignore back (crappy, I know)
+        if (face==GL_FRONT)
+            cobalt_glStencilMask(mask);
+        else
+            noerrorShim();
+    }
+}
+AliasExport(void,glStencilMaskSeparate,,(GLenum face, GLuint mask));
+
+void COBALT_API cobalt_glStencilFunc(GLenum func, GLint ref, GLuint mask) {
+    if(!glstate->list.pending) 
+        PUSH_IF_COMPILING(glStencilFunc);
+    if(  glstate->stencil.func[0]==glstate->stencil.func[1] && glstate->stencil.func[0]==func
+      && glstate->stencil.f_ref[0]==glstate->stencil.f_ref[1] && glstate->stencil.f_ref[0]==ref
+      && glstate->stencil.f_mask[0]==glstate->stencil.f_mask[1] && glstate->stencil.f_mask[0]==mask ) {
+          noerrorShim();
+          return;
+      }
+    
+    errorGL();
+    FLUSH_BEGINEND;
+    glstate->stencil.func[0] = glstate->stencil.func[1] = func;
+    glstate->stencil.f_ref[0] = glstate->stencil.f_ref[1] = ref;
+    glstate->stencil.f_mask[0] = glstate->stencil.f_mask[1] = mask;
+    host_functions.glStencilFunc(func, ref, mask);
+}
+AliasExport(void,glStencilFunc,,(GLenum func, GLint ref, GLuint mask));
+
+void COBALT_API cobalt_glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask) {
+    if(face!=GL_FRONT && face!=GL_BACK && face!=GL_FRONT_AND_BACK) {
+        errorShim(GL_INVALID_ENUM);
+        return;
+    }
+    if(face==GL_FRONT_AND_BACK) {
+        glStencilFunc(func, ref, mask);
+        return;
+    }
+
+    if(!glstate->list.pending) 
+        PUSH_IF_COMPILING(glStencilMaskSeparate);
+    int idx = (face==GL_FRONT)?0:1;
+    if(glstate->stencil.func[idx]==func && glstate->stencil.f_ref[idx]==ref && glstate->stencil.f_mask[idx]==mask) {
+        noerrorShim();
+        return;
+    }
+    
+    errorGL();
+    FLUSH_BEGINEND;
+    glstate->stencil.func[idx]=func;
+    glstate->stencil.f_ref[idx]=ref;
+    glstate->stencil.f_mask[idx]=mask;
+    if(host_functions.glStencilFuncSeparate) {
+        host_functions.glStencilFuncSeparate(face, func, ref, mask);
+    } else {
+        // fake function..., call it only for front or front_and_back, just ignore back (crappy, I know)
+        if (face==GL_FRONT)
+            cobalt_glStencilFunc(func, ref, mask);
+        else
+            noerrorShim();
+    }
+}
+AliasExport(void,glStencilFuncSeparate,,(GLenum face, GLenum func, GLint ref, GLuint mask));
+
+void COBALT_API cobalt_glStencilOp(GLenum fail, GLenum zfail, GLenum zpass) {
+    if(!glstate->list.pending) 
+        PUSH_IF_COMPILING(glStencilOp);
+    if(  glstate->stencil.sfail[0]==glstate->stencil.sfail[1] && glstate->stencil.sfail[0]==fail
+      && glstate->stencil.dpfail[0]==glstate->stencil.dpfail[1] && glstate->stencil.dpfail[0]==zfail
+      && glstate->stencil.dppass[0]==glstate->stencil.dppass[1] && glstate->stencil.dppass[0]==zpass ) {
+          noerrorShim();
+          return;
+      }
+    
+    FLUSH_BEGINEND;
+    glstate->stencil.sfail[0] = glstate->stencil.sfail[1] = fail;
+    glstate->stencil.dpfail[0] = glstate->stencil.dpfail[1] = zfail;
+    glstate->stencil.dppass[0] = glstate->stencil.dppass[1] = zpass;
+    errorGL();
+    host_functions.glStencilOp(fail, zfail, zpass);
+}
+AliasExport(void,glStencilOp,,(GLenum fail, GLenum zfail, GLenum zpass));
+
+void COBALT_API cobalt_glStencilOpSeparate(GLenum face, GLenum sfail, GLenum zfail, GLenum zpass) {
+    if(face!=GL_FRONT && face!=GL_BACK && face!=GL_FRONT_AND_BACK) {
+        errorShim(GL_INVALID_ENUM);
+        return;
+    }
+    if(face==GL_FRONT_AND_BACK) {
+        glStencilOp(sfail, zfail, zpass);
+        return;
+    }
+
+    if(!glstate->list.pending) 
+        PUSH_IF_COMPILING(glStencilOpSeparate);
+    int idx = (face==GL_FRONT)?0:1;
+    if(glstate->stencil.sfail[idx]==sfail && glstate->stencil.dpfail[idx]==zfail && glstate->stencil.dppass[idx]==zpass) {
+        noerrorShim();
+        return;
+    }
+    
+    errorGL();
+    glstate->stencil.sfail[idx] = sfail;
+    glstate->stencil.dpfail[idx] = zfail;
+    glstate->stencil.dppass[idx] = zpass;
+    if(host_functions.glStencilOpSeparate) {
+        host_functions.glStencilOpSeparate(face, sfail, zfail, zpass);
+    } else {
+        //fake, again
+        if (face==GL_FRONT)
+            cobalt_glStencilOp(sfail, zfail, zpass);
+        else
+            noerrorShim();
+    }
+}
+AliasExport(void,glStencilOpSeparate,,(GLenum face, GLenum sfail, GLenum zfail, GLenum zpass));
+
+void COBALT_API cobalt_glClearStencil(GLint s) {
+    if(!glstate->list.pending) 
+        PUSH_IF_COMPILING(glClearStencil);
+    if(  glstate->stencil.clear==s) {
+          noerrorShim();
+          return;
+      }
+    
+    FLUSH_BEGINEND;
+    glstate->stencil.clear = s;
+    errorGL();
+    host_functions.glClearStencil(s);
+}
+AliasExport(void,glClearStencil,,(GLint s));

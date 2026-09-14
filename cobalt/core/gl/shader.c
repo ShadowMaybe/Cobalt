@@ -1,0 +1,409 @@
+#include "host.h"
+#include "shader.h"
+#include "../glx/hardext.h"
+#include "debug.h"
+#include "init.h"
+#include "cobalt.h"
+#include "glstate.h"
+#include "loader.h"
+#include "shaderconv.h"
+#include "vgpu/shaderconv.h"
+
+//#define DEBUG
+#ifdef DEBUG
+#define DBG(a) a
+#else
+#define DBG(a)
+#endif
+
+KHASH_MAP_IMPL_INT(shaderlist, shader_t *);
+
+GLuint COBALT_API cobalt_glCreateShader(GLenum shaderType) {
+    DBG(printf("glCreateShader(%s)\n", PrintEnum(shaderType));)
+    // sanity check
+    if (shaderType!=GL_VERTEX_SHADER && shaderType!=GL_FRAGMENT_SHADER) {
+        DBG(printf("Invalid shader type\n");)
+        errorShim(GL_INVALID_ENUM);
+        return 0;
+    }
+    static GLuint lastshader = 0;
+    GLuint shader;
+    // create the shader
+    
+    if(host_functions.glCreateShader) {
+        shader = host_functions.glCreateShader(shaderType);
+        if(!shader) {
+            DBG(printf("Failed to create shader\n");)
+            errorGL();
+            return 0;
+        }
+    } else {
+        shader = ++lastshader;
+        noerrorShim();
+    }
+    // store the new empty shader in the list for later use
+   	khint_t k;
+   	int ret;
+	khash_t(shaderlist) *shaders = glstate->glsl->shaders;
+    k = kh_get(shaderlist, shaders, shader);
+    shader_t *glshader = NULL;
+    if (k == kh_end(shaders)){
+        k = kh_put(shaderlist, shaders, shader, &ret);
+        glshader = kh_value(shaders, k) = (shader_t*)calloc(1, sizeof(shader_t));
+    } else {
+        glshader = kh_value(shaders, k);
+    }
+    glshader->id = shader;
+    glshader->type = shaderType;
+    if(glshader->source) {
+        free(glshader->source);
+        glshader->source = NULL;
+    }
+    glshader->need.need_texcoord = -1;
+
+    // all done
+    return shader;
+}
+
+void actualy_deleteshader(GLuint shader) {
+    khint_t k;
+    khash_t(shaderlist) *shaders = glstate->glsl->shaders;
+    k = kh_get(shaderlist, shaders, shader);
+    if (k != kh_end(shaders)) {
+        shader_t *glshader = kh_value(shaders, k);
+        if(glshader->deleted && !glshader->attached) {
+            kh_del(shaderlist, shaders, k);
+            if(glshader->source)
+                free(glshader->source);
+            if(glshader->converted)
+                free(glshader->converted);
+            free(glshader);
+        }
+    }
+}
+
+void actualy_detachshader(GLuint shader) {
+    khint_t k;
+    khash_t(shaderlist) *shaders = glstate->glsl->shaders;
+    k = kh_get(shaderlist, shaders, shader);
+    if (k != kh_end(shaders)) {
+        shader_t *glshader = kh_value(shaders, k);
+        if((--glshader->attached)<1 && glshader->deleted)
+            actualy_deleteshader(shader); 
+    }
+}
+
+void COBALT_API cobalt_glDeleteShader(GLuint shader) {
+    DBG(printf("glDeleteShader(%d)\n", shader);)
+    // sanity check...
+    CHECK_SHADER(void, shader)
+    // delete the shader from the list
+    if(!glshader) {
+        noerrorShim();
+        return;
+    }
+    glshader->deleted = 1;
+    noerrorShim();
+    if(!glshader->attached) {
+        actualy_deleteshader(shader);
+
+        // delete the shader in GLES2 hardware (if any)
+        
+        if(host_functions.glDeleteShader) {
+            errorGL();
+            host_functions.glDeleteShader(shader);
+        }   
+    }
+}
+
+void COBALT_API cobalt_glCompileShader(GLuint shader) {
+    DBG(printf("glCompileShader(%d)\n", shader);)
+    // look for the shader
+    CHECK_SHADER(void, shader)
+
+    glshader->compiled = 1;
+    
+    if(host_functions.glCompileShader) {
+        host_functions.glCompileShader(glshader->id);
+        errorGL();
+        if(g_cobalt.logshader) {
+            // get compile status and print shaders sources if compile fail...
+            
+            
+            GLint status = 0;
+            host_functions.glGetShaderiv(glshader->id, GL_COMPILE_STATUS, &status);
+            if(status!=GL_TRUE) {
+                printf("COBALT: Error while compiling shader %d. Original source is:\n%s\n=======\n", glshader->id, glshader->source);
+                printf("ShaderConv Source is:\n%s\n=======\n", glshader->converted);
+                char tmp[500];
+                GLint length;
+                host_functions.glGetShaderInfoLog(glshader->id, 500, &length, tmp);
+                printf("Compiler message is\n%s\nCOBALT: End of Error log\n", tmp);
+            }
+        }
+    } else
+        noerrorShim();
+}
+
+void COBALT_API cobalt_glShaderSource(GLuint shader, GLsizei count, const GLchar * const *string, const GLint *length) {
+    DBG(printf("glShaderSource(%d, %d, %p, %p)\n", shader, count, string, length);)
+    // sanity check
+    if(count<=0) {
+        errorShim(GL_INVALID_VALUE);
+        return;
+    }
+    CHECK_SHADER(void, shader)
+    // get the size of the shader sources and than concatenate in a single string
+    int l = 0;
+    for (int i=0; i<count; i++) l+=(length && length[i] >= 0)?length[i]:strlen(string[i]);
+    if(glshader->source) free(glshader->source);
+    glshader->source = malloc(l+1);
+    memset(glshader->source, 0, l+1);
+    if(length) {
+        for (int i=0; i<count; i++) {
+            if(length[i] >= 0)
+                strncat(glshader->source, string[i], length[i]);
+            else
+                strcat(glshader->source, string[i]);
+        }
+    } else {
+        for (int i=0; i<count; i++)
+            strcat(glshader->source, string[i]);
+    }
+    
+    if (host_functions.glShaderSource) {
+        // adapt shader if needed (i.e. not an es2 context and shader is not #version 100)
+        //COBALT_LOGD("Source shader: \n%s", glshader->source);
+        if(glstate->glsl->es2 && !strncmp(glshader->source, "#version 100", 12))
+            glshader->converted = strdup(glshader->source);
+        else{
+            glshader->converted = ConvertShaderConditionally(glshader, 0);
+        }
+
+        // send source to GLES2 hardware if any
+        host_functions.glShaderSource(shader, 1, (const GLchar * const*)((glshader->converted)?(&glshader->converted):(&glshader->source)), NULL);
+        errorGL();
+    } else
+        noerrorShim();
+}
+
+#define SUPER()     \
+    GO(color)       \
+    GO(secondary)   \
+    GO(fogcoord)    \
+    GO(texcoord)    \
+    GO(normalmatrix)\
+    GO(mvmatrix)    \
+    GO(mvpmatrix)   \
+    GO(notexarray)  \
+    GO(clean)       \
+    GO(clipvertex)  \
+    GO2(texs)
+
+void accumShaderNeeds(GLuint shader, shaderconv_need_t *need) {
+    CHECK_SHADER(void, shader)
+    if(!glshader->converted) 
+        return;
+    #define GO(A) if(need->need_##A < glshader->need.need_##A) need->need_##A = glshader->need.need_##A;
+    #define GO2(A) need->need_##A |= glshader->need.need_##A;
+    SUPER()
+    #undef GO
+    #undef GO2
+}
+int isShaderCompatible(GLuint shader, shaderconv_need_t *need) {
+    CHECK_SHADER(int, shader)
+    if(!glshader->converted)
+        return 0;
+    #define GO(A) if(need->need_##A > glshader->need.need_##A) return 0;
+    #define GO2(A) if(need->need_##A & glshader->need.need_##A) return 0;
+    SUPER()
+    #undef GO
+    #undef GO2
+    return 1;
+}
+#undef SUPER
+
+void redoShader(GLuint shader, shaderconv_need_t *need) {
+    
+    if(!host_functions.glShaderSource)
+        return;
+    CHECK_SHADER(void, shader)
+    if(!glshader->converted)
+        return;
+
+    // No need to test anymore, since vgpu will handle a different pass type.
+    // test, if no changes, no need to reconvert & recompile...
+    //if (memcmp(&glshader->need, need, sizeof(shaderconv_need_t))==0)
+        //return;
+    free(glshader->converted);
+    glshader->converted = NULL;
+    memcpy(&glshader->need, need, sizeof(shaderconv_need_t));
+    glshader->converted = ConvertShaderConditionally(glshader, 1);
+    // send source to GLES2 hardware if any
+    host_functions.glShaderSource(shader, 1, (const GLchar * const*)((glshader->converted)?(&glshader->converted):(&glshader->source)), NULL);
+    // recompile...
+    cobalt_glCompileShader(glshader->id);
+}
+
+void COBALT_API cobalt_glGetShaderSource(GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *source) {
+    DBG(printf("glGetShaderSource(%d, %d, %p, %p)\n", shader, bufSize, length, source);)
+    // find shader
+    CHECK_SHADER(void, shader)
+    if (bufSize<=0) {
+        errorShim(GL_INVALID_OPERATION);
+        return;
+    }
+    // if no source, then it's an empty string
+    if(glshader->source==NULL) {
+        noerrorShim();
+        if(length) *length = 0;
+        source[0] = '\0';
+        return;
+    }
+    // copy concatenated sources
+    GLsizei size = strlen(glshader->source);
+    if (size+1>bufSize) size = bufSize-1;
+    strncpy(source, glshader->source, size);
+    source[size]='\0';
+    if(length) *length=size;
+    noerrorShim();
+}
+
+GLboolean COBALT_API cobalt_glIsShader(GLuint shader) {
+    DBG(printf("glIsShader(%d)\n", shader);)
+    // find shader
+    shader_t *glshader = NULL;
+    khint_t k;
+    {
+        khash_t(shaderlist) *shaders = glstate->glsl->shaders;
+        k = kh_get(shaderlist, shaders, shader);
+        if (k != kh_end(shaders))
+            glshader = kh_value(shaders, k);
+    }
+    return (glshader)?GL_TRUE:GL_FALSE;
+}
+
+shader_t *getShader(GLuint shader) {
+    khint_t k;
+    {
+        khash_t(shaderlist) *shaders = glstate->glsl->shaders;
+        k = kh_get(shaderlist, shaders, shader);
+        if (k != kh_end(shaders))
+            return kh_value(shaders, k);
+    }
+    return NULL;
+}
+
+static const char* GLES_NoGLSLSupport = "No Shader support with current backend";
+
+void COBALT_API cobalt_glGetShaderInfoLog(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog) {
+    DBG(printf("glGetShaderInfoLog(%d, %d, %p, %p)\n", shader, maxLength, length, infoLog);)
+    // find shader
+    CHECK_SHADER(void, shader)
+    if(maxLength<=0) {
+        errorShim(GL_INVALID_OPERATION);
+        return;
+    }
+    
+    if(host_functions.glGetShaderInfoLog) {
+        host_functions.glGetShaderInfoLog(glshader->id, maxLength, length, infoLog);
+        errorGL();
+    } else {
+        strncpy(infoLog, GLES_NoGLSLSupport, maxLength);
+        if(length) *length = strlen(infoLog);
+    }
+}
+
+void COBALT_API cobalt_glGetShaderiv(GLuint shader, GLenum pname, GLint *params) {
+    DBG(printf("glGetShaderiv(%d, %s, %p)\n", shader, PrintEnum(pname), params);)
+    // find shader
+    CHECK_SHADER(void, shader)
+    
+    noerrorShim();
+    switch (pname) {
+        case GL_SHADER_TYPE:
+            *params = glshader->type;
+            break;
+        case GL_DELETE_STATUS:
+            *params = (glshader->deleted)?GL_TRUE:GL_FALSE;
+            break;
+        case GL_COMPILE_STATUS:
+            if(host_functions.glGetShaderiv) {
+                host_functions.glGetShaderiv(glshader->id, pname, params);
+                errorGL();
+            } else {
+                *params = GL_FALSE; // stub, compile always fail
+            }
+            break;
+        case GL_INFO_LOG_LENGTH:
+            if(host_functions.glGetShaderiv) {
+                host_functions.glGetShaderiv(glshader->id, pname, params);
+                errorGL();
+            } else {
+                *params = strlen(GLES_NoGLSLSupport); // stub, compile always fail
+            }
+            break;
+        case GL_SHADER_SOURCE_LENGTH:
+            if(glshader->source)
+                *params = strlen(glshader->source)+1;
+            else
+                *params = 0;
+            break;
+        default:
+            errorShim(GL_INVALID_ENUM);
+    }
+}
+
+void COBALT_API cobalt_glGetShaderPrecisionFormat(GLenum shaderType, GLenum precisionType, GLint *range, GLint *precision) {
+    
+    if(host_functions.glGetShaderPrecisionFormat) {
+        host_functions.glGetShaderPrecisionFormat(shaderType, precisionType, range, precision);
+        errorGL();
+    } else {
+        errorShim(GL_INVALID_ENUM);
+    }
+}
+
+void COBALT_API cobalt_glShaderBinary(GLsizei count, const GLuint *shaders, GLenum binaryFormat, const void *binary, GLsizei length) {
+    // TODO: check consistancy of "shaders" values
+    
+    if (host_functions.glShaderBinary) {
+        host_functions.glShaderBinary(count, shaders, binaryFormat, binary, length);
+        errorGL();
+    } else {
+        errorShim(GL_INVALID_ENUM);
+    }
+}
+
+void COBALT_API cobalt_glReleaseShaderCompiler(void) {
+    
+    if(host_functions.glReleaseShaderCompiler) {
+        host_functions.glReleaseShaderCompiler();
+        errorGL();
+    } else
+        noerrorShim();
+}
+
+// ========== GL_ARB_shader_objects ==============
+
+AliasExport(GLuint,glCreateShader,,(GLenum shaderType));
+AliasExport(void,glDeleteShader,,(GLuint shader));
+AliasExport(void,glCompileShader,,(GLuint shader));
+AliasExport(void,glShaderSource,,(GLuint shader, GLsizei count, const GLchar * const *string, const GLint *length));
+AliasExport(void,glGetShaderSource,,(GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *source));
+AliasExport(GLboolean,glIsShader,,(GLuint shader));
+AliasExport(void,glGetShaderInfoLog,,(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog));
+AliasExport(void,glGetShaderiv,,(GLuint shader, GLenum pname, GLint *params));
+AliasExport(void,glGetShaderPrecisionFormat,,(GLenum shaderType, GLenum precisionType, GLint *range, GLint *precision));
+AliasExport(void,glShaderBinary,,(GLsizei count, const GLuint *shaders, GLenum binaryFormat, const void *binary, GLsizei length));
+AliasExport_V(void,glReleaseShaderCompiler);
+
+
+GLhandleARB COBALT_API cobalt_glCreateShaderObject(GLenum shaderType) {
+    return cobalt_glCreateShader(shaderType);
+}
+
+AliasExport(GLhandleARB,glCreateShaderObject,ARB,(GLenum shaderType));
+AliasExport(GLvoid,glShaderSource,ARB,(GLhandleARB shaderObj, GLsizei count, const GLcharARB **string, const GLint *length));
+AliasExport(GLvoid,glCompileShader,ARB,(GLhandleARB shaderObj));
+AliasExport(GLvoid,glGetShaderSource,ARB,(GLhandleARB obj, GLsizei maxLength, GLsizei *length, GLcharARB *source));

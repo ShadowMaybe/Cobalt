@@ -1,19 +1,13 @@
 pluginManagement {
     repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
+        google()
         mavenCentral()
         gradlePluginPortal()
     }
 }
 
+@Suppress("UnstableApiUsage")
 dependencyResolutionManagement {
-    @Suppress("UnstableApiUsage")
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
@@ -22,9 +16,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Cobalt"
-
-include(":cobalt-core")
-include(":cobalt-launcher")
-include(":cobalt-legacy")
-include(":cobalt-modern")
-include(":cobalt-app")
+include(":app")

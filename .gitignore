@@ -1,46 +1,21 @@
-# Built application files
+# Built outputs
 *.apk
-*.aar
-*.ap_
 *.aab
-
-# Files for the ART/Dalvik VM
-*.dex
-
-# Java class files
-*.class
-
-# Generated files
-bin/
-gen/
-out/
-release/
-
-# Gradle files
-.gradle/
+*.so
+*.dSYM
 build/
+.gradle/
 local.properties
 
-# Android Studio
-*.iml
+# IDE
 .idea/
-.DS_Store
+*.iml
+*.iws
+*.ipr
 
-# NDK
-obj/
-.externalNativeBuild/
-.cxx/
-
-# Kotlin
-*.kotlin_module
-
-# Local configuration
-*.local
-*.local.properties
-
-# Log files
-*.log
-
-# OS files
+# OS
 .DS_Store
 Thumbs.db
+
+# Reference repos (not part of Cobalt)
+/ref/
