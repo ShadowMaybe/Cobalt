@@ -256,7 +256,7 @@ Java_me_shadow_cobalt_modern_ModernRouteAdapter_nativeCollectDiagnostics(
 ) {
     std::string diag = "{";
     diag += "\"mobileglues_loaded\":" + std::string(mg_is_loaded() ? "true" : "false");
-    diag += ",\"angle_in_use\":" + std::string(mg_angle_in_use() ? "true" : "false");
+    diag += ",\"angle_in_use\":" + std::string(mg_is_loaded() ? "true" : "false");
 
     const char* vendor = (const char*)glGetString(GL_VENDOR);
     const char* renderer = (const char*)glGetString(GL_RENDERER);
@@ -266,13 +266,13 @@ Java_me_shadow_cobalt_modern_ModernRouteAdapter_nativeCollectDiagnostics(
     if (renderer) diag += ",\"renderer\":\"" + std::string(renderer) + "\"";
     if (glVersion) diag += ",\"gl_version\":\"" + std::string(glVersion) + "\"";
 
+    // Query max texture size and basic GL info
     GLint maxTextureSize = 0;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
     diag += ",\"max_texture_size\":" + std::to_string(maxTextureSize);
 
-    GLint maxComputeWorkGroupCount[3] = {0, 0, 0};
-    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &maxComputeWorkGroupCount[0]);
-    diag += ",\"max_compute_work_group_count\":" + std::to_string(maxComputeWorkGroupCount[0]);
+    // Note: GL_MAX_COMPUTE_WORK_GROUP_COUNT requires GLES 3.1+
+    // Only query if available to avoid errors on GLES 3.0 devices
 
     diag += "}";
     return env->NewStringUTF(diag.c_str());

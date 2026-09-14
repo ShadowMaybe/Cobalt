@@ -86,7 +86,7 @@ class DefaultRecoveryManager : RecoveryManager {
                 "Modern route requires GLES 3.0 minimum. This device may only support $familyName rendering."
             FailureCode.LIBRARY_MISSING ->
                 "Required native library not found. Reinstall the Cobalt package."
-            FailureCode.CONTEXT_CREATED_FAILED, FailureCode.CONTEXT_CREATION_FAILED ->
+            FailureCode.CONTEXT_CREATION_FAILED ->
                 "EGL context creation failed. Try clearing the renderer cache."
             FailureCode.MINIMAL_DRAW_FAILED ->
                 "Health check failed. The $familyName route may not be compatible with this device."

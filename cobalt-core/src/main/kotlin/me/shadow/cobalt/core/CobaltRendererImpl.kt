@@ -4,6 +4,7 @@ import android.util.Log
 import me.shadow.cobalt.core.api.CobaltRenderer
 import me.shadow.cobalt.core.cache.CacheManager
 import me.shadow.cobalt.core.model.*
+import me.shadow.cobalt.core.observability.CobaltEvent
 import me.shadow.cobalt.core.observability.ObservabilityLayer
 import me.shadow.cobalt.core.performance.PerformanceController
 import me.shadow.cobalt.core.probe.CapabilityProbe
@@ -11,6 +12,7 @@ import me.shadow.cobalt.core.recovery.RecoveryManager
 import me.shadow.cobalt.core.resource.ResourceManager
 import me.shadow.cobalt.core.route.RouteAdapter
 import me.shadow.cobalt.core.router.PolicyRouter
+import me.shadow.cobalt.core.router.RoutingStatus
 import me.shadow.cobalt.core.session.SessionCoordinator
 import me.shadow.cobalt.core.version.VersionNormalizer
 import java.util.concurrent.ConcurrentHashMap
@@ -372,9 +374,12 @@ class CobaltRendererImpl(
         return try {
             // Make context current
             val makeCurrentResult = adapter.makeCurrent()
-            if (makeCurrentResult.isFailure) {
-                Log.e(TAG, "Health check: makeCurrent failed")
-                return false
+            when (makeCurrentResult) {
+                is me.shadow.cobalt.core.model.Result.Success -> { /* ok */ }
+                is me.shadow.cobalt.core.model.Result.Failure -> {
+                    Log.e(TAG, "Health check: makeCurrent failed: ${makeCurrentResult.error}")
+                    return false
+                }
             }
 
             // Minimal draw is adapter-specific — delegate via makeCurrent + minimal GL calls

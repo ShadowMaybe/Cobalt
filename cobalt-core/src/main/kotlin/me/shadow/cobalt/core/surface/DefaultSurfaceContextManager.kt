@@ -264,7 +264,7 @@ class DefaultSurfaceContextManager : SurfaceContextManager {
 
     private fun getRenderableType(glesLevel: Int): Int {
         return when {
-            glesLevel >= 30 -> EGL14.EGL_OPENGL_ES3_BIT
+            glesLevel >= 30 -> EGL_OPENGL_ES3_BIT
             glesLevel >= 20 -> EGL14.EGL_OPENGL_ES2_BIT
             else -> EGL14.EGL_OPENGL_ES_BIT
         }
@@ -280,5 +280,6 @@ class DefaultSurfaceContextManager : SurfaceContextManager {
 
     companion object {
         private const val TAG = "CobaltSurface"
+        private const val EGL_OPENGL_ES3_BIT = 0x0040
     }
 }

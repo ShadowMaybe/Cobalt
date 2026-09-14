@@ -23,6 +23,9 @@ bool mg_load(const char* mg_lib_path);
 void mg_unload(void);
 bool mg_is_loaded(void);
 
+// Query whether ANGLE is active as the GL backend
+bool mg_angle_in_use(void);
+
 // Environment setup (must be called before mg_load)
 void mg_set_env(const char* key, const char* value);
 

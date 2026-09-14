@@ -25,6 +25,12 @@ static bool g_loaded = false;
 typedef int (*mg_angle_in_use_t)(void);
 static mg_angle_in_use_t g_mg_angle_in_use = nullptr;
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Public API — must match the extern "C" declarations in mg_loader.h
+// ──────────────────────────────────────────────────────────────────────────────
+
+extern "C" {
+
 void mg_set_env(const char* key, const char* value) {
     setenv(key, value, 1);
     LOGI("Set env: %s=%s", key, value);
@@ -91,3 +97,5 @@ bool mg_angle_in_use(void) {
     }
     return false;
 }
+
+} // extern "C"

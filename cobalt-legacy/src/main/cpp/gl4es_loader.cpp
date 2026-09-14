@@ -48,6 +48,12 @@ static void default_fb_size_callback(int* w, int* h) {
     *h = g_fb_height;
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Public API — must match the extern "C" declarations in gl4es_loader.h
+// ──────────────────────────────────────────────────────────────────────────────
+
+extern "C" {
+
 /**
  * Load the gl4es library and resolve all required symbols.
  * Returns true if the library was loaded successfully.
@@ -192,3 +198,5 @@ bool gl4es_is_loaded(void) {
 bool gl4es_is_initialized(void) {
     return g_initialized;
 }
+
+} // extern "C"
