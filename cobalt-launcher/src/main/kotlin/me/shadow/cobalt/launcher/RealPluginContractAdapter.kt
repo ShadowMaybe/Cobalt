@@ -88,10 +88,10 @@ class RealPluginContractAdapter(
 
         // Build library set
         val libraries = LibrarySet(
-            nativeLibraries = mapOfNotNull(
+            nativeLibraries = mapOfNotNull<String, String>(
                 "provider" to primaryLib,
-                rendererInfo.secondaryLibraryName to secondaryLib
-            ),
+                (rendererInfo.secondaryLibraryName ?: "") to (secondaryLib ?: "")
+            ).filterKeys { it.isNotEmpty() },
             glesLibraryPath = secondaryLib,
             eglLibraryPath = secondaryLib,
             providerBuildId = metadata.providerBuildId,

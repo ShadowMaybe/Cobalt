@@ -107,15 +107,15 @@ data class LaunchError(
 
 // Helper extension for Result mapping
 private inline fun <T, E, R> Result<T, E>.mapError(transform: (E) -> R): Result<T, R> {
-    return fold(
-        onSuccess = { Result.success(it) },
-        onFailure = { Result.failure(transform(it)) }
-    )
+    return when (this) {
+        is Result.Success -> Result.success(value)
+        is Result.Failure -> Result.failure(transform(error))
+    }
 }
 
 private inline fun <T, E> Result<T, E>.getOr(default: (E) -> Nothing): T {
-    return fold(
-        onSuccess = { it },
-        onFailure = { default(it) }
-    )
+    return when (this) {
+        is Result.Success -> value
+        is Result.Failure -> default(error)
+    }
 }
