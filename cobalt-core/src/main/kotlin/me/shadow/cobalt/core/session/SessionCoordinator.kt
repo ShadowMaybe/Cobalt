@@ -38,9 +38,10 @@ interface SessionCoordinator {
 
     /**
      * Records a state transition with timestamp for diagnostics.
+     * Accepts a session ID string — may be called before the SessionHandle is allocated.
      */
     fun recordTransition(
-        session: SessionHandle,
+        sessionId: String,
         from: SessionState,
         to: SessionState,
         reason: String? = null

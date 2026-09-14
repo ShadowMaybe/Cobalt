@@ -79,13 +79,13 @@ class DefaultSessionCoordinator : SessionCoordinator {
     }
 
     override fun recordTransition(
-        session: SessionHandle,
+        sessionId: String,
         from: SessionState,
         to: SessionState,
         reason: String?
     ) {
         lock.withLock {
-            val entry = sessions[session.id] ?: return@withLock
+            val entry = sessions[sessionId] ?: return@withLock
             entry.transitions.add(
                 StateTransition(
                     from = from,

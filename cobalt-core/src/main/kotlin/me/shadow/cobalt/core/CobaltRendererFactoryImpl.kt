@@ -73,7 +73,7 @@ private class StubRouteAdapter(private val family: RouteFamily) : RouteAdapter {
     override fun buildPrivateConfig(input: me.shadow.cobalt.core.model.LaunchInput, probe: me.shadow.cobalt.core.model.CapabilitySnapshot, profile: me.shadow.cobalt.core.model.Profile) =
         me.shadow.cobalt.core.model.ProviderConfig(routeFamily = family, profile = profile)
     override fun initialize(config: me.shadow.cobalt.core.model.ProviderConfig) = me.shadow.cobalt.core.model.InitResult.OK
-    override fun makeCurrent() = Result.success(Unit)
+    override fun makeCurrent() = me.shadow.cobalt.core.model.Result.success(Unit)
     override fun translateShader(request: me.shadow.cobalt.core.route.ShaderRequest) =
         me.shadow.cobalt.core.route.ShaderResult.Supported(request.source)
     override fun submit(commandBuffer: me.shadow.cobalt.core.model.CommandBuffer) = me.shadow.cobalt.core.route.SubmitResult.OK
