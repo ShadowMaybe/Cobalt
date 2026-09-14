@@ -42,7 +42,7 @@ class DefaultSessionCoordinator : SessionCoordinator {
         )
 
         sessions[handle.id] = entry
-        recordTransition(handle, SessionState.NEW, SessionState.NEW, "Session allocated")
+        recordTransition(handle.id, SessionState.NEW, SessionState.NEW, "Session allocated")
 
         return handle
     }
