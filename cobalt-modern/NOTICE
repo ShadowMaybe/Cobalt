@@ -1,0 +1,48 @@
+Third-Party Notices: cobalt-modern
+===============================================================================
+
+1. MobileGlues / MobileGlues-release
+   Repository: https://github.com/MobileGL-Dev/MobileGlues-release
+   License: Apache License 2.0
+
+   This module provides a GLES 3.x desktop-GL compatibility renderer with
+   shader translation, capability emulation, optional diagnostics, and
+   feature switches.
+
+   Full license text: https://www.apache.org/licenses/LICENSE-2.0
+
+   Copyright 2024 MobileGL-Dev
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+2. NGG-FCLRendererPlugin
+   Repository: https://github.com/BZLZHH/NGG-FCLRendererPlugin
+   License: Apache License 2.0
+
+   Android renderer plugin packaging, launcher discovery metadata,
+   environment handoff patterns, native-library packaging, and
+   diagnostics reference.
+
+   Full license text: https://www.apache.org/licenses/LICENSE-2.0
+
+   Copyright 2024 BZLZHH
+
+3. NG-GL4ES
+   Repository: https://github.com/BZLZHH/NG-GL4ES
+   License: GNU Lesser General Public License v2.1 (LGPL-2.1)
+
+   Modern shader/program cache implementation.
+
+   Full license text: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+
+   Copyright (C) 2024 BZLZHH

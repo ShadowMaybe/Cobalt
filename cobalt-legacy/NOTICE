@@ -1,0 +1,26 @@
+Third-Party Notices: cobalt-legacy
+===============================================================================
+
+1. gl4es_extra_extra
+   Repository: https://github.com/artdeell/gl4es_extra_extra/
+   Branch: hotfix/float_inputs
+   Commit: 79bbef59af30868228d4f736149e6bcbc437f442
+   License: GNU Lesser General Public License v2.1 (LGPL-2.1)
+
+   This module provides a libGL-style compatibility layer over GLES 1.1 or
+   GLES 2.0, optional EGL/GLX wrappers, dynamic GLES/EGL loading, shader
+   conversion, and a precompiled shader archive.
+
+   Full license text: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+
+   Copyright (C) 2024 artdeell
+
+   This software is free software; you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as published
+   by the Free Software Foundation, either version 2.1 of the License, or
+   (at your option) any later version.
+
+   This software is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.

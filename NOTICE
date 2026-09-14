@@ -1,0 +1,42 @@
+Cobalt Android Renderer for Minecraft: Java Edition
+Copyright (c) 2024 Cobalt Project
+
+This product includes software developed by the Cobalt Project.
+
+===============================================================================
+Third-Party Software Notices
+===============================================================================
+
+This product includes code and concepts from the following open-source projects:
+
+1. gl4es_extra_extra
+   Repository: https://github.com/artdeell/gl4es_extra_extra/
+   Commit: 79bbef59af30868228d4f736149e6bcbc437f442
+   License: LGPL-2.1 (see cobalt-legacy/NOTICE)
+   Purpose: Legacy OpenGL compatibility path (<= 1.17.0)
+
+2. NGG-FCLRendererPlugin
+   Repository: https://github.com/BZLZHH/NGG-FCLRendererPlugin
+   License: Apache-2.0 (see cobalt-modern/NOTICE)
+   Purpose: Android renderer plugin packaging reference
+
+3. MobileGlues / MobileGlues-release
+   Repository: https://github.com/MobileGL-Dev/MobileGlues-release
+   License: Apache-2.0 (see cobalt-modern/NOTICE)
+   Purpose: Modern GLES compatibility path (> 1.17.0)
+
+4. NG-GL4ES
+   Repository: https://github.com/BZLZHH/NG-GL4ES
+   License: LGPL-2.1 (see cobalt-modern/NOTICE)
+   Purpose: Modern shader/program cache implementation
+
+===============================================================================
+License Compliance
+===============================================================================
+
+All required license texts, copyright notices, and source-provenance records
+are preserved in the respective module directories and in this NOTICE file.
+
+The Cobalt project is licensed under MIT. Third-party components retain their
+original licenses. When redistributing, ensure all applicable license texts
+are included in the distribution.
