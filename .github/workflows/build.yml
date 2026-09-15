@@ -18,32 +18,40 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK and NDK
+      - name: Setup Android NDK and CMake
         run: |
-          # The runner has Android SDK pre-installed at $ANDROID_HOME
           echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          ls $ANDROID_HOME/platforms/ 2>/dev/null || echo "No platforms dir"
-          # Accept licenses and install needed components
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install \
-            "platforms;android-35" \
-            "build-tools;35.0.0" \
+          ls "$ANDROID_HOME/platforms/" 2>/dev/null
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses 2>/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
             "ndk;27.0.12077973" \
-            "cmake;3.22.1" 2>&1 || {
-            # Fallback: try without cmdline-tools
-            echo "Trying alternative sdkmanager..."
-            which sdkmanager 2>/dev/null && sdkmanager --install "ndk;27.0.12077973" "cmake;3.22.1"
-          }
+            "cmake;3.22.1" 2>&1
 
-      - name: Build debug APK
+      - name: Build debug APK (verbose)
+        id: build
+        continue-on-error: true
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1
+          ./gradlew assembleDebug --no-daemon --info 2>&1 | tee build_output.log
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: build_output.log
+          retention-days: 7
 
       - name: Upload debug APK
-        if: success()
+        if: steps.build.outputs.exit_code == '0'
         uses: actions/upload-artifact@v4
         with:
           name: cobalt-debug
           path: app/build/outputs/apk/debug/*.apk
+
+      - name: Fail if build failed
+        if: steps.build.outputs.exit_code != '0'
+        run: |
+          echo "Build failed! Check build-output.log artifact."
+          exit 1
