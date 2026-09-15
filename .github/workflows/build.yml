@@ -3,8 +3,6 @@ name: Build Cobalt
 on:
   push:
     branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   build:
@@ -22,17 +20,16 @@ jobs:
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses 2>/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
-            "ndk;27.0.12077973" \
-            "cmake;3.22.1" 2>&1
+            "ndk;27.0.12077973" "cmake;3.22.1" 2>&1
 
-      - name: Build debug APK
+      - name: Build
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon 2>&1 | tail -100
+          ./gradlew assembleDebug --no-daemon 2>&1 | tail -200
 
-      - name: Upload debug APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
-        if: success()
+        if: always()
         with:
           name: cobalt-debug
           path: app/build/outputs/apk/debug/*.apk
