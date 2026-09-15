@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <sstream>
 #include "cache.h"
-#include "../../version.h"
+#include "../../../version.h"
 
 #define DEBUG 0
 

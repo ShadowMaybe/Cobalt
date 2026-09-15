@@ -9,7 +9,7 @@
 #define COBALT_PLUGIN_CACHE_H
 
 #include "../mg.h"
-#include "../../config/config.h"
+#include "../config/config.h"
 #include "../../config/settings.h"
 
 #include <list>

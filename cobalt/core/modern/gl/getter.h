@@ -12,7 +12,7 @@
 #include "../config/settings.h"
 #include "../gles/loader.h"
 #include "mg.h"
-#include "../version.h"
+#include "../../version.h"
 
 #ifndef COBALT_GETTER_H
 #define COBALT_GETTER_H
