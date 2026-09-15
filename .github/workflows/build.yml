@@ -9,6 +9,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,21 +23,20 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: true
-
-      - name: Install NDK and CMake
+      - name: Install Android SDK components
         run: |
-          sdkmanager "ndk;27.0.12077973" "cmake;3.22.1"
-          echo "ndk.dir=$ANDROID_HOME/ndk/27.0.12077973" > local.properties
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;27.0.12077973" "cmake;3.22.1"
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME }}
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace 2>&1
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
 
       - name: Upload debug APK
         if: success()
@@ -42,13 +44,3 @@ jobs:
         with:
           name: cobalt-debug
           path: app/build/outputs/apk/debug/*.apk
-
-      - name: Upload build logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs
-          path: |
-            app/build/outputs/**/*.log
-            app/build/intermediates/cmake/**/*.log
-            cobalt/build/**/*.log
