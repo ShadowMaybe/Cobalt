@@ -20,38 +20,19 @@ jobs:
 
       - name: Setup Android NDK and CMake
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls "$ANDROID_HOME/platforms/" 2>/dev/null
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses 2>/dev/null || true
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
             "ndk;27.0.12077973" \
             "cmake;3.22.1" 2>&1
 
-      - name: Build debug APK (verbose)
-        id: build
-        continue-on-error: true
+      - name: Build debug APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --info 2>&1 | tee build_output.log
-          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
-
-      - name: Upload build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          path: build_output.log
-          retention-days: 7
+          ./gradlew assembleDebug --no-daemon 2>&1
 
       - name: Upload debug APK
-        if: steps.build.outputs.exit_code == '0'
         uses: actions/upload-artifact@v4
         with:
           name: cobalt-debug
           path: app/build/outputs/apk/debug/*.apk
-
-      - name: Fail if build failed
-        if: steps.build.outputs.exit_code != '0'
-        run: |
-          echo "Build failed! Check build-output.log artifact."
-          exit 1
+          if-no-files-found: warn
